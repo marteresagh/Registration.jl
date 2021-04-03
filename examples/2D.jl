@@ -9,7 +9,7 @@ target = rand(2,1000)
 r = [0.5 -sqrt(3)/2; sqrt(3)/2 0.5]
 t = [1,2]
 s = [1.4 0;0 0.5]
-RST_originale = vcat(hcat(r*s,[0,0]),[0.,0.,1.]')
+RST_originale = vcat(hcat(r,[0,0]),[0.,0.,1.]')
 RST_originale[1:2,3] = t
 
 source = Common.apply_matrix(RST_originale,target)
@@ -23,10 +23,26 @@ GL.VIEW([
 	GL.GLFrame2
 ]);
 
+using BenchmarkTools
+R,T = Registration.ICP(target,source)
+RST_ICP = vcat(hcat(R,[0,0]),[0.,0.,1.]')
+RST_ICP[1:2,3] = T
 
-R,T = Registration.ICP(target,source)
-R,T = Registration.ICP(target,source)
-R,T = Registration.ICP(target,source)
+R,T = Registration.trasformazioneaffine2D(target,source)
+RST_tra = vcat(hcat(R,[0,0]),[0.,0.,1.]')
+RST_tra[1:2,3] = T
+
+R,T = Registration.fitafftrasf2D(target,source)
+RST_fit = vcat(hcat(R,[0,0]),[0.,0.,1.]')
+RST_fit[1:2,3] = T
+
+GL.VIEW([
+	GL.GLPoints(permutedims(source), GL.COLORS[2])
+	GL.GLPoints(permutedims(Common.apply_matrix(Lar.inv(RST_originale),source)), GL.COLORS[2])
+	GL.GLPoints(permutedims(target), GL.COLORS[1])
+	GL.GLFrame2
+]);
+
 X2 = R*X.+T
 residuo(R,T,X,Y)
 GL.VIEW([

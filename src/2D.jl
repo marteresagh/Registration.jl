@@ -39,7 +39,7 @@ end
 
 
 
-function trasformazioneaffine2D(target::Lar.Points,source::Lar.Points)
+function trasformazioneaffine2D(target::Lar.Points, source::Lar.Points)
 	x=source[1,:]
 	y=source[2,:]
 	u=target[1,:]
@@ -64,8 +64,8 @@ function trasformazioneaffine2D(target::Lar.Points,source::Lar.Points)
 	zero = zeros(3,3)
 
 	A = [block zero; zero block]
-	b=[sux, suy, su, svx, svy, sv]
-	params=A\b
+	b = [sux, suy, su, svx, svy, sv]
+	params = A\b
 
 	R = [ params[1] params[2];
 		params[4] params[5]]
@@ -97,6 +97,9 @@ function fitafftrasf2D(target::Lar.Points,source::Lar.Points)
 end
 
 
+
+
+#
 function iterativeICP(source,target,itermax)
 	x=copy(source)
 	iter=1
