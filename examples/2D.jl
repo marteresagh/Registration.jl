@@ -24,7 +24,9 @@ GL.VIEW([
 ]);
 
 
-R,T = Registration.ICP(X,Y)
+R,T = Registration.ICP(target,source)
+R,T = Registration.ICP(target,source)
+R,T = Registration.ICP(target,source)
 X2 = R*X.+T
 residuo(R,T,X,Y)
 GL.VIEW([

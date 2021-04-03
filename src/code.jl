@@ -74,7 +74,6 @@ function trasformazioneaffine2D(X::Lar.Points,Y::Lar.Points)
 end
 
 
-
 ## uso la versione 2
 function fitafftrasf2D(X::Lar.Points,Y::Lar.Points)
 	x = X[1,:]

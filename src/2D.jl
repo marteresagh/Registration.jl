@@ -4,7 +4,7 @@ while the other one, the source, is transformed to best match the reference.
 source è la source cloud (si muove)
 target è la reference cloud (ferma = master)
 """
-function ICP(target::Lar.points,source::Lar.Points)
+function ICP(target::Lar.Points,source::Lar.Points)
 	x=source[1,:]
 	y=source[2,:]
 	u=target[1,:]
@@ -39,7 +39,7 @@ end
 
 
 
-function trasformazioneaffine2D(source::Lar.Points,target::Lar.Points)
+function trasformazioneaffine2D(target::Lar.Points,source::Lar.Points)
 	x=source[1,:]
 	y=source[2,:]
 	u=target[1,:]
@@ -77,7 +77,7 @@ end
 
 
 # uso la versione 2
-function fitafftrasf2D(source::Lar.Points,target::Lar.Points)
+function fitafftrasf2D(target::Lar.Points,source::Lar.Points)
 	x = source[1,:]
 	y = source[2,:]
 	u = target[1,:]
