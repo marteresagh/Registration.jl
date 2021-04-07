@@ -16,6 +16,12 @@ function parse_commandline()
 	"source"
 		help = "Source points"
 		required = true
+	"--picked_target","-t"
+		help = "Picked target points"
+		required = true
+	"--picked_source","-s"
+		help = "Picked source points"
+		required = true
 	"--output", "-o"
 		help = "Output folder"
 		required = true
@@ -29,16 +35,23 @@ function main()
 
 	target = args["target"]
 	source = args["source"]
+	picked_target_ = args["picked_target"]
+	picked_source_ = args["picked_source"]
 	output_folder = args["output"]
 
-	source_points = FileManager.load_points(source)
-	target_points = FileManager.load_points(target)
-	R,T = fitafftrasf3D(target_points,source_points)
 
-	ROTO = Registration.Common.matrix4(R)
-	ROTO[1:3,4] = T
+	PC_target = Registration.FileManager.source2pc(target,0)
+	target_points = Registration.FileManager.load_points(picked_target_)
+	picked_target = Registration.Common.consistent_seeds(PC_target).([c[:] for c in eachcol(target_points)])
 
-	io = open(joinpath(output_folder,"rototraslazione.txt")
+	PC_source = Registration.FileManager.source2pc(source,0)
+	source_points = Registration.FileManager.load_points(picked_source_)
+	picked_source = Registration.Common.consistent_seeds(PC_source).([c[:] for c in eachcol(source_points)])
+
+	ROTO = Registration.ICP(PC_target.coordinates,PC_source.coordinates,picked_target,picked_source)
+
+	# 3. salvataggio
+	io = open(joinpath(output_folder,"rototraslazione.txt"),"w")
 	write(io,"$(ROTO[1,1]) $(ROTO[1,2]) $(ROTO[1,3]) $(ROTO[1,4])\n")
 	write(io,"$(ROTO[2,1]) $(ROTO[2,2]) $(ROTO[2,3]) $(ROTO[2,4])\n")
 	write(io,"$(ROTO[3,1]) $(ROTO[3,2]) $(ROTO[3,3]) $(ROTO[3,4])\n")
