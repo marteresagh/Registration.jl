@@ -16,10 +16,10 @@ function parse_commandline()
 	"source"
 		help = "Source points"
 		required = true
-	"--picked_target","-t"
+	"--picked_target", "-t"
 		help = "Picked target points"
 		required = true
-	"--picked_source","-s"
+	"--picked_source", "-s"
 		help = "Picked source points"
 		required = true
 	"--output", "-o"
