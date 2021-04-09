@@ -1,7 +1,20 @@
 """
-ICP Algorithm
+	ICP(target::Lar.Points, source::Lar.Points, picked_target::Array{Int64,1}, picked_source::Array{Int64,1}) -> Matrix
+
+Return affine transformation to combine two point clouds into a global consistent model.
+
+In the Iterative Closest Point one point cloud the reference, or target, is kept fixed,
+while the other one, the source, is transformed to best match the reference.
+
+# Parameters
+ - target: coordinates points of target point cloud
+ - source: coordinates points of source point cloud
+ - picked_id_target: id of points picked in target point cloud
+ - picked_id_source: id of points picked in source point cloud
+ - threshold: distance threshold 
 """
-function ICP(target::Lar.Points, source::Lar.Points, picked_target::Array{Int64,1}, picked_source::Array{Int64,1})
+function ICP(target::Lar.Points, source::Lar.Points, picked_id_target::Array{Int64,1}, picked_id_source::Array{Int64,1}; threshold = 0.03::Float64)
+	# default: 3cm distance threshold
 	py"""
 	import open3d as o3d
 	import numpy as np
@@ -24,15 +37,15 @@ function ICP(target::Lar.Points, source::Lar.Points, picked_target::Array{Int64,
 		p2p = o3d.pipelines.registration.TransformationEstimationPointToPoint()
 		trans_init = p2p.compute_transformation(pcd_s, pcd_t,
 		o3d.utility.Vector2iVector(corr))
-		#
+
 		# point-to-point ICP for refinement
 		print("Perform point-to-point ICP refinement")
-		threshold = 0.03  # 3cm distance threshold
 		reg_p2p = o3d.pipelines.registration.registration_icp(
 		pcd_s, pcd_t, threshold, trans_init,
 		o3d.pipelines.registration.TransformationEstimationPointToPoint())
-		#draw_registration_result(source, target, reg_p2p.transformation)
+
 		print(reg_p2p)
+		print("Transformation is:")
 		print(reg_p2p.transformation)
 		return reg_p2p.transformation
 
@@ -40,7 +53,7 @@ function ICP(target::Lar.Points, source::Lar.Points, picked_target::Array{Int64,
 	array_target_points = [c[:] for c in eachcol(target)]
 	array_source_points = [c[:] for c in eachcol(source)]
 
-	affineMatrix = py"points2pcd"(array_target_points,array_source_points,picked_target,picked_source)
+	affineMatrix = py"points2pcd"(array_target_points,array_source_points,picked_id_target,picked_id_source)
 	row1 = convert(Array,get(affineMatrix, 1 - 1))
 	row2 = convert(Array,get(affineMatrix, 2 - 1))
 	row3 = convert(Array,get(affineMatrix, 3 - 1))

@@ -25,6 +25,10 @@ function parse_commandline()
 	"--output", "-o"
 		help = "Output folder"
 		required = true
+	"--threshold"
+		help = "Distance threshold"
+		required = true
+		default = 0.03
 	end
 
 	return parse_args(s)
@@ -38,20 +42,26 @@ function main()
 	picked_target_ = args["picked_target"]
 	picked_source_ = args["picked_source"]
 	output_folder = args["output"]
+	threshold = args["threshold"]
+
+	flushprintln("== Parameters ==")
+	flushprintln("Target  =>  $target")
+	flushprintln("Source  =>  $source")
+	flushprintln("Output folder  =>  $output_folder")
+	flushprintln("Threshold  =>  $threshold")
+
+	PC_target = FileManager.source2pc(target,0)
+	target_points = FileManager.load_points(picked_target_)
+	picked_target = Common.consistent_seeds(PC_target).([c[:] for c in eachcol(target_points)])
+
+	PC_source = FileManager.source2pc(source,0)
+	source_points = FileManager.load_points(picked_source_)
+	picked_source = Common.consistent_seeds(PC_source).([c[:] for c in eachcol(source_points)])
+
+	ROTO = Registration.ICP(PC_target.coordinates,PC_source.coordinates,picked_target,picked_source; threshold = threshold)
 
 
-	PC_target = Registration.FileManager.source2pc(target,0)
-	target_points = Registration.FileManager.load_points(picked_target_)
-	picked_target = Registration.Common.consistent_seeds(PC_target).([c[:] for c in eachcol(target_points)])
-
-	PC_source = Registration.FileManager.source2pc(source,0)
-	source_points = Registration.FileManager.load_points(picked_source_)
-	picked_source = Registration.Common.consistent_seeds(PC_source).([c[:] for c in eachcol(source_points)])
-
-	ROTO = Registration.ICP(PC_target.coordinates,PC_source.coordinates,picked_target,picked_source)
-
-	# 3. salvataggio
-	io = open(joinpath(output_folder,"rototraslazione.txt"),"w")
+	io = open(joinpath(output_folder,"matrix.txt"),"w")
 	write(io,"$(ROTO[1,1]) $(ROTO[1,2]) $(ROTO[1,3]) $(ROTO[1,4])\n")
 	write(io,"$(ROTO[2,1]) $(ROTO[2,2]) $(ROTO[2,3]) $(ROTO[2,4])\n")
 	write(io,"$(ROTO[3,1]) $(ROTO[3,2]) $(ROTO[3,3]) $(ROTO[3,4])\n")

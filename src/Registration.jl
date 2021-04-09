@@ -8,5 +8,5 @@ module Registration
 
     include("ICP.jl")
 
-    export hello
+    export Common,FileManager
 end # module
