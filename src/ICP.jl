@@ -11,7 +11,7 @@ while the other one, the source, is transformed to best match the reference.
  - source: coordinates points of source point cloud
  - picked_id_target: id of points picked in target point cloud
  - picked_id_source: id of points picked in source point cloud
- - threshold: distance threshold 
+ - threshold: distance threshold
 """
 function ICP(target::Lar.Points, source::Lar.Points, picked_id_target::Array{Int64,1}, picked_id_source::Array{Int64,1}; threshold = 0.03::Float64)
 	# default: 3cm distance threshold
@@ -19,7 +19,7 @@ function ICP(target::Lar.Points, source::Lar.Points, picked_id_target::Array{Int
 	import open3d as o3d
 	import numpy as np
 
-	def points2pcd(array_target_points,array_source_points,picked_id_target,picked_id_source):
+	def points2pcd(array_target_points,array_source_points,picked_id_target,picked_id_source,threshold):
 		pcd_t = o3d.geometry.PointCloud()
 		pcd_t.points = o3d.utility.Vector3dVector(np.array(array_target_points))
 
@@ -53,7 +53,7 @@ function ICP(target::Lar.Points, source::Lar.Points, picked_id_target::Array{Int
 	array_target_points = [c[:] for c in eachcol(target)]
 	array_source_points = [c[:] for c in eachcol(source)]
 
-	affineMatrix = py"points2pcd"(array_target_points,array_source_points,picked_id_target,picked_id_source)
+	affineMatrix = py"points2pcd"(array_target_points,array_source_points,picked_id_target,picked_id_source,threshold)
 	row1 = convert(Array,get(affineMatrix, 1 - 1))
 	row2 = convert(Array,get(affineMatrix, 2 - 1))
 	row3 = convert(Array,get(affineMatrix, 3 - 1))

@@ -27,7 +27,6 @@ function parse_commandline()
 		required = true
 	"--threshold"
 		help = "Distance threshold"
-		required = true
 		default = 0.03
 	end
 
@@ -44,11 +43,11 @@ function main()
 	output_folder = args["output"]
 	threshold = args["threshold"]
 
-	flushprintln("== Parameters ==")
-	flushprintln("Target  =>  $target")
-	flushprintln("Source  =>  $source")
-	flushprintln("Output folder  =>  $output_folder")
-	flushprintln("Threshold  =>  $threshold")
+	Registration.flushprintln("== Parameters ==")
+	Registration.flushprintln("Target  =>  $target")
+	Registration.flushprintln("Source  =>  $source")
+	Registration.flushprintln("Output folder  =>  $output_folder")
+	Registration.flushprintln("Threshold  =>  $threshold")
 
 	PC_target = FileManager.source2pc(target,0)
 	target_points = FileManager.load_points(picked_target_)
