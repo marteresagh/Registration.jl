@@ -9,13 +9,13 @@ module Registration
     const o3d = PyNULL()
 
     function __init__()
-        copy!(o3d, pyimport_conda("open3D"))
+        copy!(o3d, pyimport_conda("open3D.geometry","open3D"))
     end
 
     function hello()
-        @show o3d.geometry.PointCloud()
+        @show o3d.PointCloud()
     end
     # include("ICP.jl")
 
-    export hello 
+    export hello
 end # module
