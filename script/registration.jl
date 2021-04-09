@@ -46,6 +46,8 @@ function main()
 	Registration.flushprintln("== Parameters ==")
 	Registration.flushprintln("Target  =>  $target")
 	Registration.flushprintln("Source  =>  $source")
+	Registration.flushprintln("Picked points in Target  =>  $picked_target_")
+	Registration.flushprintln("Picked points in Source  =>  $picked_source_")
 	Registration.flushprintln("Output folder  =>  $output_folder")
 	Registration.flushprintln("Threshold  =>  $threshold")
 
