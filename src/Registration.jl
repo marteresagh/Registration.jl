@@ -2,8 +2,8 @@ __precompile__()
 
 module Registration
 
-    using Common
-    using FileManager
+    # using Common
+    # using FileManager
     using PyCall
 
     const o3d = PyNULL()
@@ -12,8 +12,10 @@ module Registration
         copy!(o3d, pyimport_conda("open3D"))
     end
 
-    @show o3d.geometry.PointCloud()
+    function hello()
+        @show o3d.geometry.PointCloud()
+    end
     # include("ICP.jl")
 
-    export Common, FileManager
+    export hello 
 end # module
