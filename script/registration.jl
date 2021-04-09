@@ -68,6 +68,8 @@ function main()
 	write(io,"$(ROTO[3,1]) $(ROTO[3,2]) $(ROTO[3,3]) $(ROTO[3,4])\n")
 	write(io,"$(ROTO[4,1]) $(ROTO[4,2]) $(ROTO[4,3]) $(ROTO[4,4])\n")
 	close(io)
+
+	FileManager.successful(true,output_folder)
 end
 
 @time main()
