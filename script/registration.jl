@@ -28,6 +28,9 @@ function parse_commandline()
 	"--threshold"
 		help = "Distance threshold"
 		default = 0.03
+	"--lod"
+		help = "Level of detail"
+		default = 0
 	end
 
 	return parse_args(s)
@@ -42,8 +45,10 @@ function main()
 	picked_source_ = args["picked_source"]
 	output_folder = args["output"]
 	threshold = args["threshold"]
+	lod = args["lod"]
 
-	Registration.flushprintln("== Parameters ==")
+	Registration.flushprintln("")
+	Registration.flushprintln("== PARAMETERS ==")
 	Registration.flushprintln("Target  =>  $target")
 	Registration.flushprintln("Source  =>  $source")
 	Registration.flushprintln("Picked points in Target  =>  $picked_target_")
@@ -51,11 +56,13 @@ function main()
 	Registration.flushprintln("Output folder  =>  $output_folder")
 	Registration.flushprintln("Threshold  =>  $threshold")
 
-	PC_target = FileManager.source2pc(target,0)
+	Registration.flushprintln("")
+	Registration.flushprintln("== PROCESSING ==")
+	PC_target = FileManager.source2pc(target,lod)
 	target_points = FileManager.load_points(picked_target_)
 	picked_target = Common.consistent_seeds(PC_target).([c[:] for c in eachcol(target_points)])
 
-	PC_source = FileManager.source2pc(source,0)
+	PC_source = FileManager.source2pc(source,lod)
 	source_points = FileManager.load_points(picked_source_)
 	picked_source = Common.consistent_seeds(PC_source).([c[:] for c in eachcol(source_points)])
 
