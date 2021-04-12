@@ -23,7 +23,7 @@ function parse_commandline()
 		help = "Picked source points"
 		required = true
 	"--output", "-o"
-		help = "Output folder"
+		help = "Output filename (.txt)"
 		required = true
 	"--threshold"
 		help = "Distance threshold"
@@ -43,7 +43,7 @@ function main()
 	source = args["source"]
 	picked_target_ = args["picked_target"]
 	picked_source_ = args["picked_source"]
-	output_folder = args["output"]
+	output_file = args["output"]
 	threshold = args["threshold"]
 	lod = args["lod"]
 
@@ -53,7 +53,7 @@ function main()
 	Registration.flushprintln("Source  =>  $source")
 	Registration.flushprintln("Picked points in Target  =>  $picked_target_")
 	Registration.flushprintln("Picked points in Source  =>  $picked_source_")
-	Registration.flushprintln("Output folder  =>  $output_folder")
+	Registration.flushprintln("Output file  =>  $output_file")
 	Registration.flushprintln("Threshold  =>  $threshold")
 
 	Registration.flushprintln("")
@@ -69,14 +69,14 @@ function main()
 	ROTO = Registration.ICP(PC_target.coordinates,PC_source.coordinates,picked_target,picked_source; threshold = threshold)
 
 
-	io = open(joinpath(output_folder,"matrix.txt"),"w")
+	io = open(output_file,"w")
 	write(io,"$(ROTO[1,1]) $(ROTO[1,2]) $(ROTO[1,3]) $(ROTO[1,4])\n")
 	write(io,"$(ROTO[2,1]) $(ROTO[2,2]) $(ROTO[2,3]) $(ROTO[2,4])\n")
 	write(io,"$(ROTO[3,1]) $(ROTO[3,2]) $(ROTO[3,3]) $(ROTO[3,4])\n")
 	write(io,"$(ROTO[4,1]) $(ROTO[4,2]) $(ROTO[4,3]) $(ROTO[4,4])\n")
 	close(io)
 
-	FileManager.successful(true,output_folder)
+	#FileManager.successful(true,output_folder)
 end
 
 @time main()
