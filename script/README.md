@@ -10,7 +10,7 @@ while the other one, the source, is transformed to best match the reference.
 #### Input parameters description:
  - target: LAS/Potree of target
  - source: LAS/Potree of source
- - output: output folder
+ - output: output filename
  - picked_target: a text file with points list of target
  - picked_source: a text file with points list of source
  - threshold: maximum distance of the nearest neighbor
@@ -33,7 +33,7 @@ optional arguments:
                         Picked target points
   -s, --picked_source PICKED_SOURCE
                         Picked source points
-  -o, --output OUTPUT   Output folder
+  -o, --output OUTPUT   Output filename (.txt)
   --threshold THRESHOLD
                         Distance threshold (default: 0.03)
   --lod LOD             Level of detail (default: 0)
@@ -43,7 +43,7 @@ optional arguments:
 #### Examples:
 
     # registration LAS
-    julia registration.jl -t "C:\picked_points_target.txt" -s "C:\picked_points_source.txt" -o "C:\FOLDER" "C:\target.las" "C:\source.las"
+    julia registration.jl -t "C:\picked_points_target.txt" -s "C:\picked_points_source.txt" -o "C:\matrix.txt" "C:\target.las" "C:\source.las"
 
     # registration LAS with different threshold
-    julia registration.jl -t "C:\picked_points_target.txt" -s "C:\picked_points_source.txt" -o "C:\FOLDER" --threshold 0.02 "C:\target.las" "C:\source.las"
+    julia registration.jl -t "C:\picked_points_target.txt" -s "C:\picked_points_source.txt" -o "C:\matrix.txt" --threshold 0.02 "C:\target.las" "C:\source.las"
