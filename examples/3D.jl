@@ -12,8 +12,8 @@ source_points = FileManager.load_points(source)
 picked_source = Common.consistent_seeds(PC_source).([c[:] for c in eachcol(source_points)])
 
 GL.VIEW([
-	Visualization.points_color_from_rgb(Common.apply_matrix(Common.Lar.t(-centroid...),PC_source.coordinates),PC_source.rgbs)
-	Visualization.points_color_from_rgb(Common.apply_matrix(Common.Lar.t(-centroid...),PC_target.coordinates),PC_target.rgbs)
+	Visualization.points(Common.apply_matrix(Common.Lar.t(-centroid...),PC_source.coordinates),PC_source.rgbs)
+	Visualization.points(Common.apply_matrix(Common.Lar.t(-centroid...),PC_target.coordinates),PC_target.rgbs)
 ]);
 
 
@@ -21,6 +21,6 @@ ROTO = Registration.ICP(PC_target.coordinates,PC_source.coordinates,picked_targe
 
 
 GL.VIEW([
-	Visualization.points_color_from_rgb(Common.apply_matrix(Common.Lar.t(-centroid...),Common.apply_matrix(ROTO,PC_source.coordinates)),PC_source.rgbs)
-	Visualization.points_color_from_rgb(Common.apply_matrix(Common.Lar.t(-centroid...),PC_target.coordinates),PC_target.rgbs)
+	Visualization.points(Common.apply_matrix(Common.Lar.t(-centroid...),Common.apply_matrix(ROTO,PC_source.coordinates)),PC_source.rgbs)
+	Visualization.points(Common.apply_matrix(Common.Lar.t(-centroid...),PC_target.coordinates),PC_target.rgbs)
 ]);
