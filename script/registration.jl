@@ -2,6 +2,7 @@ println("loading packages... ")
 
 using ArgParse
 using Registration
+using Search
 
 println("packages OK")
 
@@ -60,11 +61,11 @@ function main()
 	Registration.flushprintln("== PROCESSING ==")
 	PC_target = FileManager.source2pc(target,lod)
 	target_points = FileManager.load_points(picked_target_)
-	picked_target = Common.consistent_seeds(PC_target).([c[:] for c in eachcol(target_points)])
+	picked_target = Search.consistent_seeds(PC_target).([c[:] for c in eachcol(target_points)])
 
 	PC_source = FileManager.source2pc(source,lod)
 	source_points = FileManager.load_points(picked_source_)
-	picked_source = Common.consistent_seeds(PC_source).([c[:] for c in eachcol(source_points)])
+	picked_source = Search.consistent_seeds(PC_source).([c[:] for c in eachcol(source_points)])
 
 	ROTO = Registration.ICP(PC_target.coordinates,PC_source.coordinates,picked_target,picked_source; threshold = threshold)
 
