@@ -13,7 +13,7 @@ while the other one, the source, is transformed to best match the reference.
  - picked_id_source: id of points picked in source point cloud
  - threshold: distance threshold
 """
-function ICP(target::Lar.Points, source::Lar.Points, picked_id_target::Array{Int64,1}, picked_id_source::Array{Int64,1}; threshold = 0.03::Float64)
+function ICP(target::Points, source::Points, picked_id_target::Array{Int64,1}, picked_id_source::Array{Int64,1}; threshold = 0.03::Float64)
 	# default: 3cm distance threshold
 	py"""
 	import open3d as o3d
