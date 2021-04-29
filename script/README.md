@@ -11,10 +11,13 @@ while the other one, the source, is transformed to best match the reference.
  - target: LAS/Potree of target
  - source: LAS/Potree of source
  - output: output filename
- - picked_target: a text file with points list of target
- - picked_source: a text file with points list of source
+ - picked_target: a text file with points list of target (coordinates by row)
+ - picked_source: a text file with points list of source (coordinates by row)
  - threshold: maximum distance of the nearest neighbor
  - lod: level of detail of potree project
+
+#### Output:
+  - `output.txt`: a text file with affine transformation written by row
 
 #### Options:
 ```
