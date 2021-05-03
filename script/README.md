@@ -10,22 +10,24 @@ while the other one, the source, is transformed to best match the reference.
 #### Input parameters description:
  - target: LAS/Potree of target
  - source: LAS/Potree of source
- - output: output filename
+ - outfolder: output folder
+ - projname: project name
  - picked_target: a text file with points list of target (coordinates by row)
  - picked_source: a text file with points list of source (coordinates by row)
  - threshold: maximum distance of the nearest neighbor
  - lod: level of detail of potree project
 
 #### Output:
-  - `output.txt`: a text file with affine transformation written by row
+  - `projname.txt`: a text file with affine transformation written by row
+  - `projname.las`: transformed source
 
 #### Options:
 ```
 $ julia registration.jl -h
 
-usage: registration.jl -t PICKED_TARGET -s PICKED_SOURCE -o OUTPUT
-                       [--threshold THRESHOLD] [--lod LOD] [-h] target
-                       source
+usage: registration.jl -t PICKED_TARGET -s PICKED_SOURCE -o OUTFOLDER
+                       -p PROJNAME [--threshold THRESHOLD] [--lod LOD]
+                       [-h] target source
 
 positional arguments:
   target                Target points
@@ -36,7 +38,10 @@ optional arguments:
                         Picked target points
   -s, --picked_source PICKED_SOURCE
                         Picked source points
-  -o, --output OUTPUT   Output filename (.txt)
+  -o, --outfolder OUTFOLDER
+                        Output folder project
+  -p, --projname PROJNAME
+                        Project name
   --threshold THRESHOLD
                         Distance threshold (default: 0.03)
   --lod LOD             Level of detail (default: 0)
@@ -46,7 +51,7 @@ optional arguments:
 #### Examples:
 
     # registration LAS
-    julia registration.jl -t "C:\picked_points_target.txt" -s "C:\picked_points_source.txt" -o "C:\matrix.txt" "C:\target.las" "C:\source.las"
+    julia registration.jl -t "C:\picked_points_target.txt" -s "C:\picked_points_source.txt" -o "C:\PROJ_FOLDER" -p "TEST001" "C:\target.las" "C:\source.las"
 
     # registration LAS with different threshold
-    julia registration.jl -t "C:\picked_points_target.txt" -s "C:\picked_points_source.txt" -o "C:\matrix.txt" --threshold 0.02 "C:\target.las" "C:\source.las"
+    julia registration.jl -t "C:\picked_points_target.txt" -s "C:\picked_points_source.txt" -o "C:\PROJ_FOLDER" -p "TEST001" --threshold 0.02 "C:\target.las" "C:\source.las"
