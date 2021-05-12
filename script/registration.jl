@@ -34,6 +34,7 @@ function parse_commandline()
 		default = 0.03
 	"--lod"
 		help = "Level of detail"
+		arg_type = Int
 		default = 0
 	end
 
@@ -113,6 +114,7 @@ function main()
 	Registration.flushprintln("Output folder  =>  $output_folder")
 	Registration.flushprintln("Project name  =>  $proj_name")
 	Registration.flushprintln("Threshold  =>  $threshold")
+	Registration.flushprintln("Lod  =>  $lod")
 
 	Registration.flushprintln("")
 	Registration.flushprintln("== PROCESSING ==")
@@ -140,18 +142,37 @@ function main()
 		aabb_original = FileManager.las2aabb(source)
 		V,_,_ = Common.getmodel(aabb_original)
 		new_V = Common.apply_matrix(ROTO,V)
-		aabb = Registration.AABB(new_V)
-		files = [source]
+		aabb_source = Registration.AABB(new_V)
+		files_source = [source]
 	else
 		cloudmetadata = FileManager.CloudMetadata(source)
 		aabb_original = cloudmetadata.tightBoundingBox
 		V,_,_ = Common.getmodel(aabb_original)
 		new_V = Common.apply_matrix(ROTO,V)
-		aabb = Registration.AABB(new_V)
+		aabb_source = Registration.AABB(new_V)
 		trie = FileManager.potree2trie(source)
-		files = FileManager.get_all_values(trie)
+		files_source = FileManager.get_all_values(trie)
 	end
 
+	if isfile(target)
+		aabb_original = FileManager.las2aabb(target)
+		V,_,_ = Common.getmodel(aabb_original)
+		new_V = Common.apply_matrix(ROTO,V)
+		aabb_target = Registration.AABB(new_V)
+		files_target = [target]
+	else
+		cloudmetadata = FileManager.CloudMetadata(target)
+		aabb_original = cloudmetadata.tightBoundingBox
+		V,_,_ = Common.getmodel(aabb_original)
+		new_V = Common.apply_matrix(ROTO,V)
+		aabb_target = Registration.AABB(new_V)
+		trie = FileManager.potree2trie(target)
+		files_target = FileManager.get_all_values(trie)
+	end
+
+	aabb = Registration.AABB(max(aabb_target.x_max,aabb_source.x_max),min(aabb_target.x_min,aabb_source.x_min),
+							 max(aabb_target.y_max,aabb_source.y_max),min(aabb_target.y_min,aabb_source.y_min),
+							 max(aabb_target.z_max,aabb_source.z_max),min(aabb_target.z_min,aabb_source.z_min))
 	# creo l'header
 	header_bb = Registration.AABB(-Inf, Inf,-Inf, Inf,-Inf, Inf)
 	mainHeader = FileManager.newHeader(aabb,"REGISTRATION",FileManager.SIZE_DATARECORD)
@@ -160,13 +181,25 @@ function main()
 	n = 0
 	open(temp, "w") do s
 		write(s, Registration.LasIO.magic(Registration.LasIO.format"LAS"))
-		for file in files
+		Registration.flushprintln("Save source points...")
+		for file in files_source
 			h, laspoints = FileManager.read_LAS_LAZ(file) # read file
 			for laspoint in laspoints # read each point
 				n = n+1
 				point = Common.apply_matrix(ROTO,FileManager.xyz(laspoint,h))
 				Common.update_boundingbox!(header_bb,vcat(point...))
 				plas = FileManager.newPointRecord(laspoint,h,Registration.LasIO.LasPoint2,mainHeader; affineMatrix = ROTO)
+				write(s,plas) # write this record on temporary file
+			end
+		end
+		Registration.flushprintln("Save target points...")
+		for file in files_target
+			h, laspoints = FileManager.read_LAS_LAZ(file) # read file
+			for laspoint in laspoints # read each point
+				n = n+1
+				point = Common.apply_matrix(ROTO,FileManager.xyz(laspoint,h))
+				Common.update_boundingbox!(header_bb,vcat(point...))
+				plas = FileManager.newPointRecord(laspoint,h,Registration.LasIO.LasPoint2,mainHeader)
 				write(s,plas) # write this record on temporary file
 			end
 		end
@@ -180,7 +213,7 @@ function main()
 		temp::String,
 		)
 
-		FileManager.successful(true,output_folder)
+	FileManager.successful(true,output_folder)
 end
 
 @time main()
