@@ -38,6 +38,13 @@ function ICP(target::Points, source::Points, picked_id_target::Array{Int64,1}, p
 		trans_init = p2p.compute_transformation(pcd_s, pcd_t,
 		o3d.utility.Vector2iVector(corr))
 
+		# # evaluation
+		# print()
+		# evaluation = o3d.pipelines.registration.evaluate_registration(pcd_s, pcd_t,
+		# threshold, trans_init)
+		# print(evaluation.fitness)
+		# print(evaluation.inlier_rmse)
+
 		# point-to-point ICP for refinement
 		print("Perform point-to-point ICP refinement")
 		reg_p2p = o3d.pipelines.registration.registration_icp(
@@ -47,20 +54,22 @@ function ICP(target::Points, source::Points, picked_id_target::Array{Int64,1}, p
 		print(reg_p2p)
 		print("Transformation is:")
 		print(reg_p2p.transformation)
-		return reg_p2p.transformation
+		return reg_p2p
 
 	"""
 	array_target_points = [c[:] for c in eachcol(target)]
 	array_source_points = [c[:] for c in eachcol(source)]
 
-	affineMatrix = py"points2pcd"(array_target_points,array_source_points,picked_id_target,picked_id_source,threshold)
+	reg_p2p = py"points2pcd"(array_target_points,array_source_points,picked_id_target,picked_id_source,threshold)
+	affineMatrix = reg_p2p.transformation
+
 	row1 = convert(Array,get(affineMatrix, 1 - 1))
 	row2 = convert(Array,get(affineMatrix, 2 - 1))
 	row3 = convert(Array,get(affineMatrix, 3 - 1))
 	row4 = convert(Array,get(affineMatrix, 4 - 1))
 	M = vcat(row1',row2',row3',row4')
 
-	return M
+	return M, reg_p2p.fitness, reg_p2p.inlier_rmse, reg_p2p.correspondence_set
 end
 
 #

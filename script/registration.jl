@@ -13,24 +13,31 @@ function parse_commandline()
 	@add_arg_table! s begin
 	"target"
 		help = "Target points"
+		arg_type = String
 		required = true
 	"source"
 		help = "Source points"
+		arg_type = String
 		required = true
 	"--picked_target", "-t"
 		help = "Picked target points"
+		arg_type = String
 		required = true
 	"--picked_source", "-s"
 		help = "Picked source points"
+		arg_type = String
 		required = true
 	"--outfolder", "-o"
 		help = "Output folder project"
+		arg_type = String
 		required = true
 	"--projname", "-p"
 		help = "Project name"
+		arg_type = String
 		required = true
 	"--threshold"
 		help = "Distance threshold"
+		arg_type = Float64
 		default = 0.03
 	"--lod"
 		help = "Level of detail"
@@ -126,7 +133,7 @@ function main()
 	source_points = FileManager.load_points(picked_source_)
 	picked_source = Search.consistent_seeds(PC_source).([c[:] for c in eachcol(source_points)])
 
-	ROTO = Registration.ICP(PC_target.coordinates,PC_source.coordinates,picked_target,picked_source; threshold = threshold)
+	ROTO, fitness, rmse, corr_set = Registration.ICP(PC_target.coordinates,PC_source.coordinates,picked_target,picked_source; threshold = threshold)
 
 	io = open(joinpath(output_folder,proj_name*".txt"),"w")
 	write(io,"$(ROTO[1,1]) $(ROTO[1,2]) $(ROTO[1,3]) $(ROTO[1,4])\n")
@@ -213,7 +220,7 @@ function main()
 		temp::String,
 		)
 
-	FileManager.successful(true,output_folder)
+	FileManager.successful(true,output_folder; message = "fitness: $fitness\n inlier_rmse: $rmse\n correspondence_set: $(size(corr_set,1))")
 end
 
 @time main()
