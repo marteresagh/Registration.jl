@@ -220,7 +220,7 @@ function main()
 		temp::String,
 		)
 
-	FileManager.successful(true,output_folder; message = "fitness: $fitness\n inlier_rmse: $rmse\n correspondence_set: $(size(corr_set,1))")
+	FileManager.successful(true,output_folder; message = "fitness: $fitness\ninlier_rmse: $rmse\ncorrespondence_set: $(size(corr_set,1))")
 end
 
 @time main()
