@@ -21,8 +21,9 @@ while the other one, the source, is transformed to best match the reference.
   - `projname.txt`: a text file with affine transformation written by row
   - `projname.las`: point clouds registered
   - `execution.probe`:
-      - fitness: which measures the overlapping area, the higher the better. (# of inlier correspondences / # of points in target)
+      - fitness: which measures the overlapping area, the higher the better. (# of inlier correspondences / # of points in target).
       - inlier_rmse: which measures the RMSE of all inlier correspondences. The lower the better.
+      - correspondence_set: # of inlier correspondences.
 
 #### Options:
 ```

@@ -82,7 +82,7 @@ function savepointcloud(
 		# in temp : list of las point records
 		open(temp) do s
 			# write las
-			open(outputfile,"w") do t
+			t = open(outputfile,"w")
 				write(t, Registration.LasIO.magic(Registration.LasIO.format"LAS"))
 				write(t,mainHeader)
 
@@ -90,8 +90,9 @@ function savepointcloud(
 				for i = 1:n
 					p = read(s, pointtype)
 					write(t,p)
+					flush(t)
 				end
-			end
+			close(t)
 		end
 	end
 
@@ -186,7 +187,8 @@ function main()
 	# apro il las
 	temp = joinpath(output_folder,"temp.las")
 	n = 0
-	open(temp, "w") do s
+
+	s = open(temp, "w")
 		write(s, Registration.LasIO.magic(Registration.LasIO.format"LAS"))
 		Registration.flushprintln("Save source points...")
 		for file in files_source
@@ -197,6 +199,7 @@ function main()
 				Common.update_boundingbox!(header_bb,vcat(point...))
 				plas = FileManager.newPointRecord(laspoint,h,Registration.LasIO.LasPoint2,mainHeader; affineMatrix = ROTO)
 				write(s,plas) # write this record on temporary file
+				flush(s)
 			end
 		end
 		Registration.flushprintln("Save target points...")
@@ -208,9 +211,10 @@ function main()
 				Common.update_boundingbox!(header_bb,vcat(point...))
 				plas = FileManager.newPointRecord(laspoint,h,Registration.LasIO.LasPoint2,mainHeader)
 				write(s,plas) # write this record on temporary file
+				flush(s)
 			end
 		end
-	end
+	close(s)
 
 	savepointcloud(
 		mainHeader,
