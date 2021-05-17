@@ -55,7 +55,6 @@ Save point cloud extracted file .las.
 """
 function savepointcloud(
 	mainHeader,
-	header_bb,
 	outputfile,
 	n::Int64,
 	temp::String,
@@ -65,15 +64,6 @@ function savepointcloud(
 
 	# update header metadata
 	mainHeader.records_count = n # update number of points in header
-
-	#update header bounding box
-	Registration.flushprintln("Point cloud: update bbox ...")
-	mainHeader.x_min = header_bb.x_min
-	mainHeader.y_min = header_bb.y_min
-	mainHeader.z_min = header_bb.z_min
-	mainHeader.x_max = header_bb.x_max
-	mainHeader.y_max = header_bb.y_max
-	mainHeader.z_max = header_bb.z_max
 
 	# write las file
 	pointtype = Registration.LasIO.pointformat(mainHeader) # las point format
@@ -136,7 +126,7 @@ function main()
 
 	ROTO, fitness, rmse, corr_set = Registration.ICP(PC_target.coordinates,PC_source.coordinates,picked_target,picked_source; threshold = threshold)
 
-	io = open(joinpath(output_folder,proj_name*".txt"),"w")
+	io = open(joinpath(output_folder,proj_name*".rtm"),"w")
 	write(io,"$(ROTO[1,1]) $(ROTO[1,2]) $(ROTO[1,3]) $(ROTO[1,4])\n")
 	write(io,"$(ROTO[2,1]) $(ROTO[2,2]) $(ROTO[2,3]) $(ROTO[2,4])\n")
 	write(io,"$(ROTO[3,1]) $(ROTO[3,2]) $(ROTO[3,3]) $(ROTO[3,4])\n")
@@ -145,7 +135,6 @@ function main()
 
 
 	# save new LAS source
-
 	if isfile(source)
 		aabb_original = FileManager.las2aabb(source)
 		V,_,_ = Common.getmodel(aabb_original)
@@ -163,17 +152,11 @@ function main()
 	end
 
 	if isfile(target)
-		aabb_original = FileManager.las2aabb(target)
-		V,_,_ = Common.getmodel(aabb_original)
-		new_V = Common.apply_matrix(ROTO,V)
-		aabb_target = Registration.AABB(new_V)
+		aabb_target = FileManager.las2aabb(target)
 		files_target = [target]
 	else
 		cloudmetadata = FileManager.CloudMetadata(target)
-		aabb_original = cloudmetadata.tightBoundingBox
-		V,_,_ = Common.getmodel(aabb_original)
-		new_V = Common.apply_matrix(ROTO,V)
-		aabb_target = Registration.AABB(new_V)
+		aabb_target = cloudmetadata.tightBoundingBox
 		trie = FileManager.potree2trie(target)
 		files_target = FileManager.get_all_values(trie)
 	end
@@ -182,7 +165,6 @@ function main()
 							 max(aabb_target.y_max,aabb_source.y_max),min(aabb_target.y_min,aabb_source.y_min),
 							 max(aabb_target.z_max,aabb_source.z_max),min(aabb_target.z_min,aabb_source.z_min))
 	# creo l'header
-	header_bb = Registration.AABB(-Inf, Inf,-Inf, Inf,-Inf, Inf)
 	mainHeader = FileManager.newHeader(aabb,"REGISTRATION",FileManager.SIZE_DATARECORD)
 	# apro il las
 	temp = joinpath(output_folder,"temp.las")
@@ -196,7 +178,6 @@ function main()
 			for laspoint in laspoints # read each point
 				n = n+1
 				point = Common.apply_matrix(ROTO,FileManager.xyz(laspoint,h))
-				Common.update_boundingbox!(header_bb,vcat(point...))
 				plas = FileManager.newPointRecord(laspoint,h,Registration.LasIO.LasPoint2,mainHeader; affineMatrix = ROTO)
 				write(s,plas) # write this record on temporary file
 				flush(s)
@@ -208,7 +189,6 @@ function main()
 			for laspoint in laspoints # read each point
 				n = n+1
 				point = Common.apply_matrix(ROTO,FileManager.xyz(laspoint,h))
-				Common.update_boundingbox!(header_bb,vcat(point...))
 				plas = FileManager.newPointRecord(laspoint,h,Registration.LasIO.LasPoint2,mainHeader)
 				write(s,plas) # write this record on temporary file
 				flush(s)
@@ -218,7 +198,6 @@ function main()
 
 	savepointcloud(
 		mainHeader,
-		header_bb,
 		joinpath(output_folder,proj_name*".las"),
 		n::Int64,
 		temp::String,

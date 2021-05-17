@@ -19,7 +19,7 @@ Visualization.VIEW([
 ]);
 
 
-ROTO = Registration.ICP(PC_target.coordinates,PC_source.coordinates,picked_target,picked_source)
+ROTO,_ = Registration.ICP(PC_target.coordinates,PC_source.coordinates,picked_target,picked_source)
 
 
 Visualization.VIEW([
