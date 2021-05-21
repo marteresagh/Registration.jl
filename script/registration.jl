@@ -116,12 +116,32 @@ function main()
 
 	Registration.flushprintln("")
 	Registration.flushprintln("== PROCESSING ==")
-	PC_target = FileManager.source2pc(target,lod)
+
+	#### AABB dei punti passati MODELS
 	target_points = FileManager.load_points(picked_target_)
+	source_points = FileManager.load_points(picked_source_)
+
+	aabb_target_points = AABB(target_points)
+	aabb_source_points = AABB(source_points)
+	aabb_target = Common.getmodel(aabb_target_points)
+	aabb_source = Common.getmodel(aabb_source_points)
+
+	M_T = Common.t(Common.centroid(aabb_target[1])...)*Common.s(2.,2.,2.)*Common.t(-Common.centroid(aabb_target[1])...)
+	T = Common.apply_matrix(M_T,aabb_target[1])
+	M_S = Common.t(Common.centroid(aabb_source[1])...)*Common.s(2.,2.,2.)*Common.t(-Common.centroid(aabb_source[1])...)
+	S = Common.apply_matrix(M_S,aabb_source[1])
+
+	aabb_target = (T,aabb_target[2])
+	aabb_source = (S,aabb_source[2])
+	#### END AABB MODELs
+
+	files_target = Registration.subpotree(target, aabb_target)
+	files_source = Registration.subpotree(target, aabb_source)
+
+	PC_target = FileManager.las2pointcloud(files_target...) #FileManager.source2pc(target,lod) # prendo solo i nodi qui interni
 	picked_target = Search.consistent_seeds(PC_target).([c[:] for c in eachcol(target_points)])
 
-	PC_source = FileManager.source2pc(source,lod)
-	source_points = FileManager.load_points(picked_source_)
+	PC_source = FileManager.las2pointcloud(files_source...) #FileManager.source2pc(source,lod) # prendo solo i nodi qui interni
 	picked_source = Search.consistent_seeds(PC_source).([c[:] for c in eachcol(source_points)])
 
 	ROTO, fitness, rmse, corr_set = Registration.ICP(PC_target.coordinates,PC_source.coordinates,picked_target,picked_source; threshold = threshold)

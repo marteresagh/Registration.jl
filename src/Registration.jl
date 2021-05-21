@@ -8,6 +8,7 @@ module Registration
     using PyCall
 
     include("ICP.jl")
+    include("IO.jl")
 
     export Common,FileManager
 end # module
