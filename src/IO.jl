@@ -47,7 +47,7 @@ function dfs(trie::FileManager.DataStructures.Trie{String},
 		# intersecato ma non contenuto
 		# alcuni punti ricadono nel modello altri no
 
-		# push!(files,file)
+		push!(files,file)
 		for key in collect(keys(trie.children)) # for all children
 			files = dfs(trie.children[key],model, files)
 		end

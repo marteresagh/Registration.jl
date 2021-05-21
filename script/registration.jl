@@ -121,8 +121,8 @@ function main()
 	target_points = FileManager.load_points(picked_target_)
 	source_points = FileManager.load_points(picked_source_)
 
-	aabb_target_points = AABB(target_points)
-	aabb_source_points = AABB(source_points)
+	aabb_target_points = Common.AABB(target_points)
+	aabb_source_points = Common.AABB(source_points)
 	aabb_target = Common.getmodel(aabb_target_points)
 	aabb_source = Common.getmodel(aabb_source_points)
 
@@ -131,8 +131,8 @@ function main()
 	M_S = Common.t(Common.centroid(aabb_source[1])...)*Common.s(2.,2.,2.)*Common.t(-Common.centroid(aabb_source[1])...)
 	S = Common.apply_matrix(M_S,aabb_source[1])
 
-	aabb_target = (T,aabb_target[2])
-	aabb_source = (S,aabb_source[2])
+	aabb_target = (T,aabb_target[2],aabb_target[3])
+	aabb_source = (S,aabb_source[2],aabb_source[3])
 	#### END AABB MODELs
 
 	files_target = Registration.subpotree(target, aabb_target)
