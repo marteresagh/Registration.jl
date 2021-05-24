@@ -57,4 +57,20 @@ Visualization.VIEW([
 	Visualization.GLGrid(Common.apply_matrix(Common.t(-centroid...),aabb_source[1]),aabb_source[2])
 ]);
 
-subpotree("C:/Users/marte/Documents/potreeDirectory/pointclouds/CASALE_TARGET",aabb_target )
+
+files_target = Registration.subpotree("C:/Users/marte/Documents/potreeDirectory/pointclouds/CASALE_TARGET", aabb_target)
+files_source = Registration.subpotree("C:/Users/marte/Documents/potreeDirectory/pointclouds/CASALE_SOURCE", aabb_source)
+
+PC_target = FileManager.las2pointcloud(files_target...) #FileManager.source2pc(target,lod) # prendo solo i nodi qui interni
+picked_target = Search.consistent_seeds(PC_target).([c[:] for c in eachcol(target_points)])
+
+PC_source = FileManager.las2pointcloud(files_source...) #FileManager.source2pc(source,lod) # prendo solo i nodi qui interni
+picked_source = Search.consistent_seeds(PC_source).([c[:] for c in eachcol(source_points)])
+
+Visualization.VIEW([
+	Visualization.points(Common.apply_matrix(Common.t(-centroid...),PC_source.coordinates),PC_source.rgbs)
+	Visualization.points(Common.apply_matrix(Common.t(-centroid...),PC_target.coordinates),PC_target.rgbs)
+
+	Visualization.GLGrid(Common.apply_matrix(Common.t(-centroid...),aabb_target[1]),aabb_target[2])
+	Visualization.GLGrid(Common.apply_matrix(Common.t(-centroid...),aabb_source[1]),aabb_source[2])
+]);

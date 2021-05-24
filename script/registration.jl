@@ -1,8 +1,11 @@
+# TODO SOLO PER POTREE
+
 println("loading packages... ")
 
 using ArgParse
 using Registration
 using Search
+using OrthographicProjection
 
 println("packages OK")
 
@@ -54,39 +57,42 @@ end
 Save point cloud extracted file .las.
 """
 function savepointcloud(
-	mainHeader,
-	outputfile,
-	n::Int64,
-	temp::String,
+	files_source::Vector{String},
+	files_target::Vector{String},
+	aabb::Common.AABB,
+	outputfile::String,
+	n::Int,
+	ROTO::Matrix
 	)
 
+
+	# creo l'header
 	Registration.flushprintln("Point cloud: saving ...")
-
-	# update header metadata
-	mainHeader.records_count = n # update number of points in header
-
-	# write las file
-	pointtype = Registration.LasIO.pointformat(mainHeader) # las point format
-
-	if n != 0 # if n == 0 nothing to save
-		# in temp : list of las point records
-		open(temp) do s
-			# write las
-			t = open(outputfile,"w")
-				write(t, Registration.LasIO.magic(Registration.LasIO.format"LAS"))
-				write(t,mainHeader)
-
-				Registration.LasIO.skiplasf(s)
-				for i = 1:n
-					p = read(s, pointtype)
-					write(t,p)
-					flush(t)
-				end
-			close(t)
+	mainHeader = FileManager.newHeader(aabb,"REGISTRATION",FileManager.SIZE_DATARECORD,n)
+	# apro il las
+	t = open(outputfile,"w")
+		write(t, Registration.LasIO.magic(Registration.LasIO.format"LAS"))
+		write(t,mainHeader)
+		Registration.flushprintln("Save source points...")
+		for file in files_source
+			h, laspoints = FileManager.read_LAS_LAZ(file) # read file
+			for laspoint in laspoints # read each point
+				plas = FileManager.newPointRecord(laspoint,h,Registration.LasIO.LasPoint2,mainHeader; affineMatrix = ROTO)
+				write(t,plas) # write this record on temporary file
+				flush(t)
+			end
 		end
-	end
+		Registration.flushprintln("Save target points...")
+		for file in files_target
+			h, laspoints = FileManager.read_LAS_LAZ(file) # read file
+			for laspoint in laspoints # read each point
+				plas = FileManager.newPointRecord(laspoint,h,Registration.LasIO.LasPoint2,mainHeader)
+				write(t,plas) # write this record on temporary file
+				flush(t)
+			end
+		end
+	close(t)
 
-	rm(temp) # remove temp
 	Registration.flushprintln("Point cloud: done ...")
 end
 
@@ -118,6 +124,7 @@ function main()
 	Registration.flushprintln("== PROCESSING ==")
 
 	#### AABB dei punti passati MODELS
+
 	target_points = FileManager.load_points(picked_target_)
 	source_points = FileManager.load_points(picked_source_)
 
@@ -135,13 +142,16 @@ function main()
 	aabb_source = (S,aabb_source[2],aabb_source[3])
 	#### END AABB MODELs
 
-	files_target = Registration.subpotree(target, aabb_target)
-	files_source = Registration.subpotree(target, aabb_source)
+	file_target = joinpath(output_folder,"target_segment.las")
+	file_source = joinpath(output_folder,"source_segment.las")
 
-	PC_target = FileManager.las2pointcloud(files_target...) #FileManager.source2pc(target,lod) # prendo solo i nodi qui interni
+	OrthographicProjection.segment(target, file_target, aabb_target)
+	OrthographicProjection.segment(source, file_source, aabb_source)
+
+	PC_target = FileManager.las2pointcloud(file_target) #FileManager.source2pc(target,lod) # prendo solo i nodi qui interni
 	picked_target = Search.consistent_seeds(PC_target).([c[:] for c in eachcol(target_points)])
 
-	PC_source = FileManager.las2pointcloud(files_source...) #FileManager.source2pc(source,lod) # prendo solo i nodi qui interni
+	PC_source = FileManager.las2pointcloud(file_source) #FileManager.source2pc(source,lod) # prendo solo i nodi qui interni
 	picked_source = Search.consistent_seeds(PC_source).([c[:] for c in eachcol(source_points)])
 
 	ROTO, fitness, rmse, corr_set = Registration.ICP(PC_target.coordinates,PC_source.coordinates,picked_target,picked_source; threshold = threshold)
@@ -169,6 +179,7 @@ function main()
 		aabb_source = Registration.AABB(new_V)
 		trie = FileManager.potree2trie(source)
 		files_source = FileManager.get_all_values(trie)
+		n_source = cloudmetadata.points
 	end
 
 	if isfile(target)
@@ -179,49 +190,15 @@ function main()
 		aabb_target = cloudmetadata.tightBoundingBox
 		trie = FileManager.potree2trie(target)
 		files_target = FileManager.get_all_values(trie)
+		n_target = cloudmetadata.points
 	end
 
 	aabb = Registration.AABB(max(aabb_target.x_max,aabb_source.x_max),min(aabb_target.x_min,aabb_source.x_min),
 							 max(aabb_target.y_max,aabb_source.y_max),min(aabb_target.y_min,aabb_source.y_min),
 							 max(aabb_target.z_max,aabb_source.z_max),min(aabb_target.z_min,aabb_source.z_min))
-	# creo l'header
-	mainHeader = FileManager.newHeader(aabb,"REGISTRATION",FileManager.SIZE_DATARECORD)
-	# apro il las
-	temp = joinpath(output_folder,"temp.las")
-	n = 0
 
-	s = open(temp, "w")
-		write(s, Registration.LasIO.magic(Registration.LasIO.format"LAS"))
-		Registration.flushprintln("Save source points...")
-		for file in files_source
-			h, laspoints = FileManager.read_LAS_LAZ(file) # read file
-			for laspoint in laspoints # read each point
-				n = n+1
-				point = Common.apply_matrix(ROTO,FileManager.xyz(laspoint,h))
-				plas = FileManager.newPointRecord(laspoint,h,Registration.LasIO.LasPoint2,mainHeader; affineMatrix = ROTO)
-				write(s,plas) # write this record on temporary file
-				flush(s)
-			end
-		end
-		Registration.flushprintln("Save target points...")
-		for file in files_target
-			h, laspoints = FileManager.read_LAS_LAZ(file) # read file
-			for laspoint in laspoints # read each point
-				n = n+1
-				point = Common.apply_matrix(ROTO,FileManager.xyz(laspoint,h))
-				plas = FileManager.newPointRecord(laspoint,h,Registration.LasIO.LasPoint2,mainHeader)
-				write(s,plas) # write this record on temporary file
-				flush(s)
-			end
-		end
-	close(s)
-
-	savepointcloud(
-		mainHeader,
-		joinpath(output_folder,proj_name*".las"),
-		n::Int64,
-		temp::String,
-		)
+	n_points = n_target+n_source
+	savepointcloud(files_source,files_target,aabb,joinpath(output_folder,proj_name*".las"),n_points, ROTO)
 
 	FileManager.successful(true,output_folder; message = "fitness: $fitness\ninlier_rmse: $rmse\ncorrespondence_set: $(size(corr_set,1))")
 end
