@@ -42,10 +42,10 @@ function parse_commandline()
 		help = "Distance threshold"
 		arg_type = Float64
 		default = 0.03
-	"--lod"
-		help = "Level of detail"
-		arg_type = Int
-		default = 0
+	"--scale"
+		help = "Scale factor of BB"
+		arg_type = Float64
+		default = 1.3
 	end
 
 	return parse_args(s)
@@ -65,7 +65,6 @@ function savepointcloud(
 	ROTO::Matrix
 	)
 
-
 	# creo l'header
 	Registration.flushprintln("Point cloud: saving ...")
 	mainHeader = FileManager.newHeader(aabb,"REGISTRATION",FileManager.SIZE_DATARECORD,n)
@@ -78,7 +77,7 @@ function savepointcloud(
 			h, laspoints = FileManager.read_LAS_LAZ(file) # read file
 			for laspoint in laspoints # read each point
 				plas = FileManager.newPointRecord(laspoint,h,Registration.LasIO.LasPoint2,mainHeader; affineMatrix = ROTO)
-				write(t,plas) # write this record on temporary file
+				write(t,plas)
 				flush(t)
 			end
 		end
@@ -87,7 +86,7 @@ function savepointcloud(
 			h, laspoints = FileManager.read_LAS_LAZ(file) # read file
 			for laspoint in laspoints # read each point
 				plas = FileManager.newPointRecord(laspoint,h,Registration.LasIO.LasPoint2,mainHeader)
-				write(t,plas) # write this record on temporary file
+				write(t,plas)
 				flush(t)
 			end
 		end
@@ -96,6 +95,29 @@ function savepointcloud(
 	Registration.flushprintln("Point cloud: done ...")
 end
 
+# function segment_las(file_las::String, outputfile::String, box::Common.LAR)
+# 	t = open(outputfile,"w")
+# 	h, laspoints = FileManager.read_LAS_LAZ(file_las) # read file
+# 	for laspoint in laspoints # read each point
+# 		plas = FileManager.newPointRecord(laspoint,h,Registration.LasIO.LasPoint2,mainHeader)
+# 		write(t,plas) # write this record on temporary file
+# 		flush(t)
+# 	end
+# end
+
+function get_BB(points::Common.Points, s = 1.3::Float64)
+
+	aabb_original = Common.AABB(points)
+	C = ([aabb_original.x_min,aabb_original.y_min,aabb_original.z_min]+[aabb_original.x_max,aabb_original.y_max,aabb_original.z_max])/2
+
+	aabb_model = Common.getmodel(aabb_original)
+
+	M = Common.t(C...)*Common.s(s,s,s)*Common.t(-C...)
+	V = Common.apply_matrix(M,aabb_model[1])
+
+	aabb_scaled = (V, aabb_model[2], aabb_model[3])
+	return aabb_scaled
+end
 
 function main()
 	args = parse_commandline()
@@ -107,7 +129,7 @@ function main()
 	output_folder = args["outfolder"]
 	proj_name = args["projname"]
 	threshold = args["threshold"]
-	lod = args["lod"]
+	scale = args["scale"]
 
 	Registration.flushprintln("")
 	Registration.flushprintln("== PARAMETERS ==")
@@ -118,41 +140,45 @@ function main()
 	Registration.flushprintln("Output folder  =>  $output_folder")
 	Registration.flushprintln("Project name  =>  $proj_name")
 	Registration.flushprintln("Threshold  =>  $threshold")
-	Registration.flushprintln("Lod  =>  $lod")
+	Registration.flushprintln("Scale  =>  $scale")
 
 	Registration.flushprintln("")
-	Registration.flushprintln("== PROCESSING ==")
-
-	#### AABB dei punti passati MODELS
-
-	target_points = FileManager.load_points(picked_target_)
-	source_points = FileManager.load_points(picked_source_)
-
-	aabb_target_points = Common.AABB(target_points)
-	aabb_source_points = Common.AABB(source_points)
-	aabb_target = Common.getmodel(aabb_target_points)
-	aabb_source = Common.getmodel(aabb_source_points)
-
-	M_T = Common.t(Common.centroid(aabb_target[1])...)*Common.s(2.,2.,2.)*Common.t(-Common.centroid(aabb_target[1])...)
-	T = Common.apply_matrix(M_T,aabb_target[1])
-	M_S = Common.t(Common.centroid(aabb_source[1])...)*Common.s(2.,2.,2.)*Common.t(-Common.centroid(aabb_source[1])...)
-	S = Common.apply_matrix(M_S,aabb_source[1])
-
-	aabb_target = (T,aabb_target[2],aabb_target[3])
-	aabb_source = (S,aabb_source[2],aabb_source[3])
-	#### END AABB MODELs
+	Registration.flushprintln("== SEGMENT ==")
 
 	file_target = joinpath(output_folder,"target_segment.las")
 	file_source = joinpath(output_folder,"source_segment.las")
 
-	OrthographicProjection.segment(target, file_target, aabb_target)
-	OrthographicProjection.segment(source, file_source, aabb_source)
+	# if isfile(source) && isfile(target)
+	# 	segment_las(target, file_target, aabb_target)
+	# 	segment_las(source, file_source, aabb_source)
+	# else
+	PC_target = nothing
+	PC_source = nothing
+	picked_target = nothing
+	picked_source = nothing
 
-	PC_target = FileManager.las2pointcloud(file_target) #FileManager.source2pc(target,lod) # prendo solo i nodi qui interni
-	picked_target = Search.consistent_seeds(PC_target).([c[:] for c in eachcol(target_points)])
+	task1 = Threads.@spawn begin
+		target_points = FileManager.load_points(picked_target_)
+		aabb_target = get_BB(target_points, scale)
+		OrthographicProjection.segment(target, file_target, aabb_target; temp_name = "temp_target.las")
+		PC_target = FileManager.las2pointcloud(file_target)
+		picked_target = Search.consistent_seeds(PC_target).([c[:] for c in eachcol(target_points)])
+	end
 
-	PC_source = FileManager.las2pointcloud(file_source) #FileManager.source2pc(source,lod) # prendo solo i nodi qui interni
-	picked_source = Search.consistent_seeds(PC_source).([c[:] for c in eachcol(source_points)])
+	task2 = Threads.@spawn begin
+		source_points = FileManager.load_points(picked_source_)
+		aabb_source = get_BB(source_points, scale)
+		OrthographicProjection.segment(source, file_source, aabb_source; temp_name = "temp_source.las")
+		PC_source = FileManager.las2pointcloud(file_source)
+		picked_source = Search.consistent_seeds(PC_source).([c[:] for c in eachcol(source_points)])
+	end
+
+	fetch(task1)
+	fetch(task2)
+
+	Registration.flushprintln("")
+	Registration.flushprintln("== PROCESSING ==")
+
 
 	ROTO, fitness, rmse, corr_set = Registration.ICP(PC_target.coordinates,PC_source.coordinates,picked_target,picked_source; threshold = threshold)
 
@@ -163,42 +189,39 @@ function main()
 	write(io,"$(ROTO[4,1]) $(ROTO[4,2]) $(ROTO[4,3]) $(ROTO[4,4])\n")
 	close(io)
 
-
 	# save new LAS source
-	if isfile(source)
-		aabb_original = FileManager.las2aabb(source)
-		V,_,_ = Common.getmodel(aabb_original)
-		new_V = Common.apply_matrix(ROTO,V)
-		aabb_source = Registration.AABB(new_V)
-		files_source = [source]
-	else
-		cloudmetadata = FileManager.CloudMetadata(source)
-		aabb_original = cloudmetadata.tightBoundingBox
-		V,_,_ = Common.getmodel(aabb_original)
-		new_V = Common.apply_matrix(ROTO,V)
-		aabb_source = Registration.AABB(new_V)
-		trie = FileManager.potree2trie(source)
-		files_source = FileManager.get_all_values(trie)
-		n_source = cloudmetadata.points
-	end
+	# if isfile(source) && isfile(target)
+	# 	aabb_original = FileManager.las2aabb(source)
+	# 	V,_,_ = Common.getmodel(aabb_original)
+	# 	new_V = Common.apply_matrix(ROTO,V)
+	# 	aabb_source = Registration.AABB(new_V)
+	# 	files_source = [source]
+	#
+	# 	aabb_target = FileManager.las2aabb(target)
+	# 	files_target = [target]
+	# else
+	cloud_S = FileManager.CloudMetadata(source)
+	aabb_original = cloud_S.tightBoundingBox
+	V,_,_ = Common.getmodel(aabb_original)
+	new_V = Common.apply_matrix(ROTO,V)
+	aabb_source = Registration.AABB(new_V)
+	trie = FileManager.potree2trie(source)
+	files_source = FileManager.get_all_values(trie)
+	n_source = cloud_S.points
 
-	if isfile(target)
-		aabb_target = FileManager.las2aabb(target)
-		files_target = [target]
-	else
-		cloudmetadata = FileManager.CloudMetadata(target)
-		aabb_target = cloudmetadata.tightBoundingBox
-		trie = FileManager.potree2trie(target)
-		files_target = FileManager.get_all_values(trie)
-		n_target = cloudmetadata.points
-	end
+	cloud_T = FileManager.CloudMetadata(target)
+	aabb_target = cloud_T.tightBoundingBox
+	trie = FileManager.potree2trie(target)
+	files_target = FileManager.get_all_values(trie)
+	n_target = cloud_T.points
+
 
 	aabb = Registration.AABB(max(aabb_target.x_max,aabb_source.x_max),min(aabb_target.x_min,aabb_source.x_min),
 							 max(aabb_target.y_max,aabb_source.y_max),min(aabb_target.y_min,aabb_source.y_min),
 							 max(aabb_target.z_max,aabb_source.z_max),min(aabb_target.z_min,aabb_source.z_min))
 
 	n_points = n_target+n_source
-	savepointcloud(files_source,files_target,aabb,joinpath(output_folder,proj_name*".las"),n_points, ROTO)
+	savepointcloud(files_source, files_target, aabb, joinpath(output_folder,proj_name*".las"), n_points, ROTO)
 
 	FileManager.successful(true,output_folder; message = "fitness: $fitness\ninlier_rmse: $rmse\ncorrespondence_set: $(size(corr_set,1))")
 end
