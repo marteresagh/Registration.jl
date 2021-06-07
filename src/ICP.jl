@@ -13,13 +13,14 @@ while the other one, the source, is transformed to best match the reference.
  - picked_id_source: id of points picked in source point cloud
  - threshold: distance threshold
 """
-function ICP(target::Points, source::Points, picked_id_target::Array{Int64,1}, picked_id_source::Array{Int64,1}; threshold = 0.03::Float64)
+# no scaling
+function ICP(target::Points, source::Points, picked_id_target::Array{Int64,1}, picked_id_source::Array{Int64,1}; threshold = 0.03::Float64, max_it=2000::Int64)
 	# default: 3cm distance threshold
 	py"""
 	import open3d as o3d
 	import numpy as np
 
-	def points2pcd(array_target_points,array_source_points,picked_id_target,picked_id_source,threshold):
+	def points2pcd(array_target_points,array_source_points,picked_id_target,picked_id_source,threshold,max_it):
 		pcd_t = o3d.geometry.PointCloud()
 		pcd_t.points = o3d.utility.Vector3dVector(np.array(array_target_points))
 
@@ -37,19 +38,20 @@ function ICP(target::Points, source::Points, picked_id_target::Array{Int64,1}, p
 		p2p = o3d.pipelines.registration.TransformationEstimationPointToPoint()
 		trans_init = p2p.compute_transformation(pcd_s, pcd_t,
 		o3d.utility.Vector2iVector(corr))
+		print()
+		print("First transformation is:")
+		print(trans_init)
 
-		# # evaluation
-		# print()
-		# evaluation = o3d.pipelines.registration.evaluate_registration(pcd_s, pcd_t,
-		# threshold, trans_init)
-		# print(evaluation.fitness)
-		# print(evaluation.inlier_rmse)
+		# evaluation
+		evaluation = o3d.pipelines.registration.evaluate_registration(pcd_s, pcd_t,
+		threshold, trans_init)
+		print("fitness: ", evaluation.fitness)
+		print("inliers rmse: ", evaluation.inlier_rmse)
 
 		# point-to-point ICP for refinement
+		print()
 		print("Perform point-to-point ICP refinement")
-		reg_p2p = o3d.pipelines.registration.registration_icp(
-		pcd_s, pcd_t, threshold, trans_init,
-		o3d.pipelines.registration.TransformationEstimationPointToPoint())
+		reg_p2p = o3d.pipelines.registration.registration_icp(pcd_s, pcd_t, threshold, trans_init,o3d.pipelines.registration.TransformationEstimationPointToPoint(),o3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=max_it))
 
 		print(reg_p2p)
 		print("Transformation is:")
@@ -60,7 +62,7 @@ function ICP(target::Points, source::Points, picked_id_target::Array{Int64,1}, p
 	array_target_points = [c[:] for c in eachcol(target)]
 	array_source_points = [c[:] for c in eachcol(source)]
 
-	reg_p2p = py"points2pcd"(array_target_points,array_source_points,picked_id_target,picked_id_source,threshold)
+	reg_p2p = py"points2pcd"(array_target_points,array_source_points,picked_id_target,picked_id_source,threshold,max_it)
 	affineMatrix = reg_p2p.transformation
 
 	row1 = convert(Array,get(affineMatrix, 1 - 1))

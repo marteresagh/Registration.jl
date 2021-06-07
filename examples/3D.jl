@@ -19,7 +19,7 @@ Visualization.VIEW([
 ]);
 
 
-ROTO,_ = Registration.ICP(PC_target.coordinates,PC_source.coordinates,picked_target,picked_source)
+ROTO,_ = Registration.ICP(PC_target.coordinates,PC_source.coordinates,picked_target,picked_source; threshold = 1.0)
 
 
 Visualization.VIEW([

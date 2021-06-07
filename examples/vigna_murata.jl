@@ -1,60 +1,9 @@
-# TODO SOLO PER POTREE
-
-println("loading packages... ")
-
-using ArgParse
+using Visualization
 using Registration
 using Search
+using FileManager
+using Common
 using OrthographicProjection
-
-println("packages OK")
-
-
-function parse_commandline()
-	s = ArgParseSettings()
-
-	@add_arg_table! s begin
-	"target"
-		help = "Target points"
-		arg_type = String
-		required = true
-	"source"
-		help = "Source points"
-		arg_type = String
-		required = true
-	"--picked_target", "-t"
-		help = "Picked target points"
-		arg_type = String
-		required = true
-	"--picked_source", "-s"
-		help = "Picked source points"
-		arg_type = String
-		required = true
-	"--outfolder", "-o"
-		help = "Output folder project"
-		arg_type = String
-		required = true
-	"--projname", "-p"
-		help = "Project name"
-		arg_type = String
-		required = true
-	"--threshold"
-		help = "Distance threshold"
-		arg_type = Float64
-		default = 0.03
-	"--scale"
-		help = "Scale factor of BB"
-		arg_type = Float64
-		default = 1.3
-	"--it"
-		help = "Scale factor of BB"
-		arg_type = Int64
-		default = 1000
-	end
-
-	return parse_args(s)
-end
-
 
 
 """
@@ -99,15 +48,6 @@ function savepointcloud(
 	Registration.flushprintln("Point cloud: done ...")
 end
 
-# function segment_las(file_las::String, outputfile::String, box::Common.LAR)
-# 	t = open(outputfile,"w")
-# 	h, laspoints = FileManager.read_LAS_LAZ(file_las) # read file
-# 	for laspoint in laspoints # read each point
-# 		plas = FileManager.newPointRecord(laspoint,h,Registration.LasIO.LasPoint2,mainHeader)
-# 		write(t,plas) # write this record on temporary file
-# 		flush(t)
-# 	end
-# end
 
 function get_BB(points::Common.Points, s = 1.3::Float64)
 
@@ -124,17 +64,15 @@ function get_BB(points::Common.Points, s = 1.3::Float64)
 end
 
 function main()
-	args = parse_commandline()
 
-	target = args["target"]
-	source = args["source"]
-	picked_target_ = args["picked_target"]
-	picked_source_ = args["picked_source"]
-	output_folder = args["outfolder"]
-	proj_name = args["projname"]
-	threshold = args["threshold"]
-	scale = args["scale"]
-	max_it = args["it"]
+	target = raw"D:\registration\VIGNA_MURATA_SCAN_2\VIGNA_MURATA_TARGET"
+	source = raw"D:\registration\VIGNA_MURATA_SCAN_1\VIGNA_MURATA_SOURCE"
+	picked_target_ = raw"D:\registration\targetPoints.csv"
+	picked_source_ = raw"D:\registration\sourcePoints.csv"
+	output_folder = raw"D:\registration"
+	proj_name = "VIGNA"
+	threshold = 0.03
+	scale = 1.5
 
 	Registration.flushprintln("")
 	Registration.flushprintln("== PARAMETERS ==")
@@ -146,7 +84,6 @@ function main()
 	Registration.flushprintln("Project name  =>  $proj_name")
 	Registration.flushprintln("Threshold  =>  $threshold")
 	Registration.flushprintln("Scale  =>  $scale")
-	Registration.flushprintln("Max iteration  =>  $max_it")
 
 	Registration.flushprintln("")
 	Registration.flushprintln("== SEGMENT ==")
@@ -186,7 +123,7 @@ function main()
 	Registration.flushprintln("== PROCESSING ==")
 
 
-	ROTO, fitness, rmse, corr_set = Registration.ICP(PC_target.coordinates,PC_source.coordinates,picked_target,picked_source; threshold = threshold, max_it = max_it)
+	ROTO, fitness, rmse, corr_set = Registration.ICP(PC_target.coordinates,PC_source.coordinates,picked_target,picked_source; threshold = threshold)
 
 	io = open(joinpath(output_folder,proj_name*".rtm"),"w")
 	write(io,"$(ROTO[1,1]) $(ROTO[1,2]) $(ROTO[1,3]) $(ROTO[1,4])\n")
@@ -233,3 +170,28 @@ function main()
 end
 
 @time main()
+#
+# PC_target = FileManager.source2pc("C:/Users/marte/Documents/potreeDirectory/pointclouds/CASALE_TARGET",-1) # your path
+# target = "D:/pointclouds/registration/points_target.txt" # your path
+# target_points = FileManager.load_points(target)
+# picked_target = Search.consistent_seeds(PC_target).([c[:] for c in eachcol(target_points)])
+# centroid = Common.centroid(PC_target.coordinates)
+#
+# PC_source = FileManager.source2pc("C:/Users/marte/Documents/potreeDirectory/pointclouds/CASALE_SOURCE",0) # your path
+# source ="D:/pointclouds/registration/points_source.txt" # your path
+# source_points = FileManager.load_points(source)
+# picked_source = Search.consistent_seeds(PC_source).([c[:] for c in eachcol(source_points)])
+#
+# Visualization.VIEW([
+# 	Visualization.points(Common.apply_matrix(Common.t(-centroid...),PC_source.coordinates),PC_source.rgbs)
+# 	Visualization.points(Common.apply_matrix(Common.t(-centroid...),PC_target.coordinates),PC_target.rgbs)
+# ]);
+#
+#
+# ROTO,_ = Registration.ICP(PC_target.coordinates,PC_source.coordinates,picked_target,picked_source)
+#
+#
+# Visualization.VIEW([
+# 	Visualization.points(Common.apply_matrix(Common.t(-centroid...),Common.apply_matrix(ROTO,PC_source.coordinates)),PC_source.rgbs)
+# 	Visualization.points(Common.apply_matrix(Common.t(-centroid...),PC_target.coordinates),PC_target.rgbs)
+# ]);
