@@ -195,17 +195,9 @@ function main()
 	write(io,"$(ROTO[4,1]) $(ROTO[4,2]) $(ROTO[4,3]) $(ROTO[4,4])\n")
 	close(io)
 
-	# save new LAS source
-	# if isfile(source) && isfile(target)
-	# 	aabb_original = FileManager.las2aabb(source)
-	# 	V,_,_ = Common.getmodel(aabb_original)
-	# 	new_V = Common.apply_matrix(ROTO,V)
-	# 	aabb_source = Registration.AABB(new_V)
-	# 	files_source = [source]
-	#
-	# 	aabb_target = FileManager.las2aabb(target)
-	# 	files_target = [target]
-	# else
+	# PC = PointCloud(hcat(PC_target.coordinates,Common.apply_matrix(ROTO,PC_source.coordinates)),hcat(PC_target.rgbs,PC_source.rgbs))
+	# OUT = Registration.down_sample(PC,0.001)
+
 	cloud_S = FileManager.CloudMetadata(source)
 	aabb_original = cloud_S.tightBoundingBox
 	V,_,_ = Common.getmodel(aabb_original)
