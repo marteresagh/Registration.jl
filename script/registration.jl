@@ -65,39 +65,70 @@ function savepointcloud(
 	files_target::Vector{String},
 	aabb::Common.AABB,
 	outputfile::String,
-	n::Int,
 	ROTO::Matrix
 	)
 
 	# creo l'header
+	Registration.flushprintln("Point cloud: decimation ...")
+	PC_source = FileManager.las2pointcloud(files_source...)
+	PC_target = FileManager.las2pointcloud(files_target...)
+	PC_registered = Common.PointCloud(hcat(PC_target.coordinates,Common.apply_matrix(ROTO,PC_source.coordinates)),hcat(PC_target.rgbs,PC_source.rgbs))
+	PC_decimated = down_sample(PC_registered,0.001)
 	Registration.flushprintln("Point cloud: saving ...")
-	mainHeader = FileManager.newHeader(aabb,"REGISTRATION",FileManager.SIZE_DATARECORD,n)
-	# apro il las
-	t = open(outputfile,"w")
-		write(t, Registration.LasIO.magic(Registration.LasIO.format"LAS"))
-		write(t,mainHeader)
-		Registration.flushprintln("Save source points...")
-		for file in files_source
-			h, laspoints = FileManager.read_LAS_LAZ(file) # read file
-			for laspoint in laspoints # read each point
-				plas = FileManager.newPointRecord(laspoint,h,Registration.LasIO.LasPoint2,mainHeader; affineMatrix = ROTO)
-				write(t,plas)
-				flush(t)
-			end
+	mainHeader = FileManager.newHeader(aabb,"REGISTRATION",FileManager.SIZE_DATARECORD,PC_decimated.n_points)
+
+	open(outputfile,"w") do t
+		write(t, FileManager.LasIO.magic(FileManager.LasIO.format"LAS"))
+		write(t,params.mainHeader)
+
+		for i in 1:PC_decimated.n_points
+			p = FileManager.newPointRecord(PC_decimated.coordinates[:,i], PC_decimated.rgbs[:,i] , FileManager.LasIO.LasPoint2, mainHeader)
+			write(t,p)
 		end
-		Registration.flushprintln("Save target points...")
-		for file in files_target
-			h, laspoints = FileManager.read_LAS_LAZ(file) # read file
-			for laspoint in laspoints # read each point
-				plas = FileManager.newPointRecord(laspoint,h,Registration.LasIO.LasPoint2,mainHeader)
-				write(t,plas)
-				flush(t)
-			end
-		end
-	close(t)
+	end
 
 	Registration.flushprintln("Point cloud: done ...")
 end
+
+#
+# function savepointcloud(
+# 	files_source::Vector{String},
+# 	files_target::Vector{String},
+# 	aabb::Common.AABB,
+# 	outputfile::String,
+# 	n::Int,
+# 	ROTO::Matrix
+# 	)
+#
+# 	# creo l'header
+# 	Registration.flushprintln("Point cloud: saving ...")
+# 	mainHeader = FileManager.newHeader(aabb,"REGISTRATION",FileManager.SIZE_DATARECORD,n)
+# 	# apro il las
+# 	t = open(outputfile,"w")
+# 		write(t, Registration.LasIO.magic(Registration.LasIO.format"LAS"))
+# 		write(t,mainHeader)
+# 		Registration.flushprintln("Save source points...")
+# 		for file in files_source
+# 			h, laspoints = FileManager.read_LAS_LAZ(file) # read file
+# 			for laspoint in laspoints # read each point
+# 				plas = FileManager.newPointRecord(laspoint,h,Registration.LasIO.LasPoint2,mainHeader; affineMatrix = ROTO)
+# 				write(t,plas)
+# 				flush(t)
+# 			end
+# 		end
+# 		Registration.flushprintln("Save target points...")
+# 		for file in files_target
+# 			h, laspoints = FileManager.read_LAS_LAZ(file) # read file
+# 			for laspoint in laspoints # read each point
+# 				plas = FileManager.newPointRecord(laspoint,h,Registration.LasIO.LasPoint2,mainHeader)
+# 				write(t,plas)
+# 				flush(t)
+# 			end
+# 		end
+# 	close(t)
+#
+# 	Registration.flushprintln("Point cloud: done ...")
+# end
 
 # function segment_las(file_las::String, outputfile::String, box::Common.LAR)
 # 	t = open(outputfile,"w")
@@ -218,8 +249,10 @@ function main()
 							 max(aabb_target.y_max,aabb_source.y_max),min(aabb_target.y_min,aabb_source.y_min),
 							 max(aabb_target.z_max,aabb_source.z_max),min(aabb_target.z_min,aabb_source.z_min))
 
-	n_points = n_target+n_source
-	savepointcloud(files_source, files_target, aabb, joinpath(output_folder,proj_name*".las"), n_points, ROTO)
+
+	savepointcloud(files_source, files_target, aabb, joinpath(output_folder,proj_name*".las"), ROTO)
+	# n_points = n_target+n_source
+	# savepointcloud(files_source, files_target, aabb, joinpath(output_folder,proj_name*".las"), n_points, ROTO)
 
 	FileManager.successful(true,output_folder; message = "fitness: $fitness\ninlier_rmse: $rmse\ncorrespondence_set: $(size(corr_set,1))")
 end
