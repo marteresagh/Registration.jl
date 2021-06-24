@@ -50,6 +50,10 @@ function parse_commandline()
 		help = "Scale factor of BB"
 		arg_type = Int64
 		default = 1000
+	"--size"
+		help = "size voxel"
+		arg_type = Float64
+		default = 0.001
 	end
 
 	return parse_args(s)
@@ -65,7 +69,8 @@ function savepointcloud(
 	files_target::Vector{String},
 	aabb::Common.AABB,
 	outputfile::String,
-	ROTO::Matrix
+	ROTO::Matrix,
+	size_voxel
 	)
 
 	# creo l'header
@@ -73,16 +78,17 @@ function savepointcloud(
 	PC_source = FileManager.las2pointcloud(files_source...)
 	PC_target = FileManager.las2pointcloud(files_target...)
 	PC_registered = Common.PointCloud(hcat(PC_target.coordinates,Common.apply_matrix(ROTO,PC_source.coordinates)),hcat(PC_target.rgbs,PC_source.rgbs))
-	PC_decimated = down_sample(PC_registered,0.001)
+	PC_decimated = Registration.down_sample(PC_registered,size_voxel)
+	Registration.flushprintln("num points: $(PC_registered.n_points) -> $(PC_decimated.n_points)")
 	Registration.flushprintln("Point cloud: saving ...")
 	mainHeader = FileManager.newHeader(aabb,"REGISTRATION",FileManager.SIZE_DATARECORD,PC_decimated.n_points)
 
 	open(outputfile,"w") do t
 		write(t, FileManager.LasIO.magic(FileManager.LasIO.format"LAS"))
-		write(t,params.mainHeader)
+		write(t, mainHeader)
 
 		for i in 1:PC_decimated.n_points
-			p = FileManager.newPointRecord(PC_decimated.coordinates[:,i], PC_decimated.rgbs[:,i] , FileManager.LasIO.LasPoint2, mainHeader)
+			p = FileManager.newPointRecord(PC_decimated.coordinates[:,i], convert.(FileManager.LasIO.N0f16,PC_decimated.rgbs[:,i]) , FileManager.LasIO.LasPoint2, mainHeader)
 			write(t,p)
 		end
 	end
@@ -166,6 +172,7 @@ function main()
 	threshold = args["threshold"]
 	scale = args["scale"]
 	max_it = args["it"]
+	size_voxel = args["size"]
 
 	Registration.flushprintln("")
 	Registration.flushprintln("== PARAMETERS ==")
@@ -178,6 +185,7 @@ function main()
 	Registration.flushprintln("Threshold  =>  $threshold")
 	Registration.flushprintln("Scale  =>  $scale")
 	Registration.flushprintln("Max iteration  =>  $max_it")
+	Registration.flushprintln("Size voxel  =>  $size_voxel")
 
 	Registration.flushprintln("")
 	Registration.flushprintln("== SEGMENT ==")
@@ -250,7 +258,7 @@ function main()
 							 max(aabb_target.z_max,aabb_source.z_max),min(aabb_target.z_min,aabb_source.z_min))
 
 
-	savepointcloud(files_source, files_target, aabb, joinpath(output_folder,proj_name*".las"), ROTO)
+	savepointcloud(files_source, files_target, aabb, joinpath(output_folder,proj_name*".las"), ROTO, size_voxel)
 	# n_points = n_target+n_source
 	# savepointcloud(files_source, files_target, aabb, joinpath(output_folder,proj_name*".las"), n_points, ROTO)
 
