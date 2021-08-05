@@ -30,8 +30,8 @@ function ICP(target::Points, source::Points, picked_id_target::Array{Int64,1}, p
 		assert (len(picked_id_source) >= 3 and len(picked_id_target) >= 3)
 		assert (len(picked_id_source) == len(picked_id_target))
 		corr = np.zeros((len(picked_id_source), 2))
-		corr[:, 0] = picked_id_source
-		corr[:, 1] = picked_id_target
+		corr[:, 0] = picked_id_source -1
+		corr[:, 1] = picked_id_target -1
 
 		# estimate rough transformation using correspondences
 		print("Compute a rough transform using the correspondences given by user")
@@ -61,7 +61,7 @@ function ICP(target::Points, source::Points, picked_id_target::Array{Int64,1}, p
 	"""
 	array_target_points = [c[:] for c in eachcol(target)]
 	array_source_points = [c[:] for c in eachcol(source)]
-
+	println("prima di entrare",picked_id_source,picked_id_target)
 	reg_p2p = py"points2pcd"(array_target_points,array_source_points,picked_id_target,picked_id_source,threshold,max_it)
 	affineMatrix = reg_p2p.transformation
 

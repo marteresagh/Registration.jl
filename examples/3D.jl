@@ -22,12 +22,6 @@ Visualization.VIEW([
 ROTO,_ = Registration.ICP(PC_target.coordinates,PC_source.coordinates,picked_target,picked_source; threshold = 0.2)
 
 Visualization.VIEW([
-#	Visualization.points(PC; alpha = 0.2)
-	Visualization.points(Common.apply_matrix(Common.t(-centroid...),OUT))
-])
-
-
-Visualization.VIEW([
 	Visualization.points(Common.apply_matrix(Common.t(-centroid...),Common.apply_matrix(ROTO,PC_source.coordinates)),PC_source.rgbs)
 	Visualization.points(Common.apply_matrix(Common.t(-centroid...),PC_target.coordinates),PC_target.rgbs)
 ]);
