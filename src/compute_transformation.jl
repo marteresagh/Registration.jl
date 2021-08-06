@@ -1,10 +1,10 @@
-function georef(ref::Points,pc::Points)
+function compute_transformation(references_points::Points,point_cloud::Points)
 	# default: 3cm distance threshold
 	py"""
 	import open3d as o3d
 	import numpy as np
 
-	def ROTO(target,source):
+	def estimate_transformation(target,source):
 		pcd_t = o3d.geometry.PointCloud()
 		pcd_t.points = o3d.utility.Vector3dVector(np.array(target))
 
@@ -14,7 +14,6 @@ function georef(ref::Points,pc::Points)
 		assert (len(source) >= 3 and len(target) >= 3)
 		assert (len(source) == len(target))
 		corr = np.zeros((len(target), 2))
-
 
 		# estimate rough transformation using correspondences
 		print("Compute a rough transform using the correspondences given by user")
@@ -34,10 +33,10 @@ function georef(ref::Points,pc::Points)
 		return evaluation
 
 	"""
-	array_points = [c[:] for c in eachcol(pc)]
-	array_target_points = [c[:] for c in eachcol(ref)]
+	array_point_cloud = [c[:] for c in eachcol(point_cloud)]
+	array_references_points = [c[:] for c in eachcol(references_points)]
 
-	evaluation = py"ROTO"(array_target_points,array_points)
+	evaluation = py"estimate_transformation"(array_references_points, array_point_cloud)
 	affineMatrix = evaluation.transformation
 
 	row1 = convert(Array,get(affineMatrix, 1 - 1))

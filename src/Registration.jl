@@ -8,7 +8,7 @@ module Registration
     using PyCall
 
     include("ICP.jl")
-    include("georef.jl")
+    include("compute_transformation.jl")
     include("downsample.jl")
 
     export Common,FileManager
