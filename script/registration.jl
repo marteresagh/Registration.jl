@@ -5,7 +5,7 @@ println("loading packages... ")
 using ArgParse
 using Registration
 using Search
-using OrthographicProjection
+using Clipping
 
 println("packages OK")
 
@@ -205,7 +205,7 @@ function main()
 	task1 = Threads.@spawn begin
 		target_points = FileManager.load_points(picked_target_)
 		aabb_target = get_BB(target_points, scale)
-		OrthographicProjection.segment(target, file_target, aabb_target; temp_name = "temp_target.las")
+		Clipping.segment(target, file_target, aabb_target; temp_name = "temp_target.las")
 		PC_target = FileManager.las2pointcloud(file_target)
 		picked_target = Search.consistent_seeds(PC_target).([c[:] for c in eachcol(target_points)])
 	end
@@ -213,7 +213,7 @@ function main()
 	task2 = Threads.@spawn begin
 		source_points = FileManager.load_points(picked_source_)
 		aabb_source = get_BB(source_points, scale)
-		OrthographicProjection.segment(source, file_source, aabb_source; temp_name = "temp_source.las")
+		Clipping.segment(source, file_source, aabb_source; temp_name = "temp_source.las")
 		PC_source = FileManager.las2pointcloud(file_source)
 		picked_source = Search.consistent_seeds(PC_source).([c[:] for c in eachcol(source_points)])
 	end
