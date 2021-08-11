@@ -61,7 +61,7 @@ function ICP(target::Points, source::Points, picked_id_target::Array{Int64,1}, p
 	"""
 	array_target_points = [c[:] for c in eachcol(target)]
 	array_source_points = [c[:] for c in eachcol(source)]
-	println("prima di entrare",picked_id_source,picked_id_target)
+
 	reg_p2p = py"points2pcd"(array_target_points,array_source_points,picked_id_target,picked_id_source,threshold,max_it)
 	affineMatrix = reg_p2p.transformation
 
