@@ -23,3 +23,8 @@ Visualization.VIEW([
 	Visualization.points(PC_ref; color = Visualization.WHITE)
 	Visualization.points(Common.apply_matrix(ROTO,PC); color = Visualization.RED)
 ]);
+
+
+picked = FileManager.load_points(raw"D:\potreeDirectory\pointclouds\CASALE_TARGET\picked.txt")
+
+ref = Common.apply_matrix(Common.t(-Common.centroid(picked)...),picked)

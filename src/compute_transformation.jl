@@ -45,5 +45,5 @@ function compute_transformation(references_points::Points,point_cloud::Points)
 	row4 = convert(Array,get(affineMatrix, 4 - 1))
 	M = vcat(row1',row2',row3',row4')
 
-	return M, evaluation.fitness, evaluation.inlier_rmse
+	return M, evaluation.fitness, evaluation.inlier_rmse, evaluation.correspondence_set
 end

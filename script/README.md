@@ -18,7 +18,7 @@ while the other one, the source, is transformed to best match the reference.
  - scale: scale factor for bounding box of picked points  
 
 #### Output:
-  - `projname.txt`: a text file with affine transformation written by row
+  - `projname.rtm`: a text file with affine transformation written by row
   - `projname.las`: point clouds registered
   - `target_segment.las`: limited target (points used for calculation)
   - `source_segment.las`: limited source (points used for calculation)
@@ -58,8 +58,53 @@ optional arguments:
 
 #### Examples:
 
-    # registration LAS
+    # registration
     julia registration.jl -t "C:\picked_points_target.txt" -s "C:\picked_points_source.txt" -o "C:\PROJ_FOLDER" -p "TEST001" "C:\target_potree" "C:\source_potree"
 
-    # registration LAS with different threshold
+    # registration with different threshold
     julia registration.jl -t "C:\picked_points_target.txt" -s "C:\picked_points_source.txt" -o "C:\PROJ_FOLDER" -p "TEST001" --threshold 0.02 "C:\target_potree" "C:\source_potree"
+
+
+## georef.jl
+
+Return affine transformation to georeference point cloud.
+
+#### Input parameters description:
+ - potree: Potree of point cloud
+ - ref: a text file with points list of reference points (coordinates by row)
+ - picked: a text file with points list of potree (coordinates by row)
+ - outfolder: output folder
+ - projname: project name
+
+#### Output:
+  - `projname.rtm`: a text file with affine transformation written by row
+  - `projname.las`: point clouds georeferenced
+  - `execution.probe`:
+      - fitness: which measures the overlapping area, the higher the better. (# of inlier correspondences / # of points in target).
+      - inlier_rmse: which measures the RMSE of all inlier correspondences. The lower the better.
+      - correspondence_set: # of inlier correspondences.
+
+#### Options:
+```
+$ julia georef.jl -h
+
+usage: georef.jl --ref REF --picked PICKED -o OUTFOLDER -p PROJNAME
+                 [-h] potree
+
+positional arguments:
+  potree                Point Cloud to reference
+
+optional arguments:
+  --ref REF             Reference points
+  --picked PICKED       Picked point cloud points
+  -o, --outfolder OUTFOLDER
+                        Output folder project
+  -p, --projname PROJNAME
+                        Project name
+  -h, --help            show this help message and exit
+```
+
+#### Examples:
+
+    # georeference of Potree
+    julia georef.jl "C:\POTREE" --ref "C:\ref_points.txt" --picked "C:\picked_points.txt" -o "C:\PROJ_FOLDER" -p "GeoRefPC"
