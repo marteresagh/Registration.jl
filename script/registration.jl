@@ -74,13 +74,13 @@ function savepointcloud(
 	)
 
 	# creo l'header
-	Registration.flushprintln("Point cloud: decimation ...")
+	println("Point cloud: decimation ...")
 	PC_source = FileManager.las2pointcloud(files_source...)
 	PC_target = FileManager.las2pointcloud(files_target...)
 	PC_registered = Common.PointCloud(hcat(PC_target.coordinates,Common.apply_matrix(ROTO,PC_source.coordinates)),hcat(PC_target.rgbs,PC_source.rgbs))
 	PC_decimated = Registration.down_sample(PC_registered,size_voxel)
-	Registration.flushprintln("num points: $(PC_registered.n_points) -> $(PC_decimated.n_points)")
-	Registration.flushprintln("Point cloud: saving ...")
+	println("num points: $(PC_registered.n_points) -> $(PC_decimated.n_points)")
+	println("Point cloud: saving ...")
 	mainHeader = FileManager.newHeader(aabb,"REGISTRATION",FileManager.SIZE_DATARECORD,PC_decimated.n_points)
 
 	open(outputfile,"w") do t
@@ -90,10 +90,13 @@ function savepointcloud(
 		for i in 1:PC_decimated.n_points
 			p = FileManager.newPointRecord(PC_decimated.coordinates[:,i], convert.(FileManager.LasIO.N0f16,PC_decimated.rgbs[:,i]) , FileManager.LasIO.LasPoint2, mainHeader)
 			write(t,p)
+			if i%10000 == 0
+				flush(t)
+			end
 		end
 	end
 
-	Registration.flushprintln("Point cloud: done ...")
+	println("Point cloud: done ...")
 end
 
 #
@@ -107,13 +110,13 @@ end
 # 	)
 #
 # 	# creo l'header
-# 	Registration.flushprintln("Point cloud: saving ...")
+# 	println("Point cloud: saving ...")
 # 	mainHeader = FileManager.newHeader(aabb,"REGISTRATION",FileManager.SIZE_DATARECORD,n)
 # 	# apro il las
 # 	t = open(outputfile,"w")
 # 		write(t, Registration.LasIO.magic(Registration.LasIO.format"LAS"))
 # 		write(t,mainHeader)
-# 		Registration.flushprintln("Save source points...")
+# 		println("Save source points...")
 # 		for file in files_source
 # 			h, laspoints = FileManager.read_LAS_LAZ(file) # read file
 # 			for laspoint in laspoints # read each point
@@ -122,7 +125,7 @@ end
 # 				flush(t)
 # 			end
 # 		end
-# 		Registration.flushprintln("Save target points...")
+# 		println("Save target points...")
 # 		for file in files_target
 # 			h, laspoints = FileManager.read_LAS_LAZ(file) # read file
 # 			for laspoint in laspoints # read each point
@@ -133,7 +136,7 @@ end
 # 		end
 # 	close(t)
 #
-# 	Registration.flushprintln("Point cloud: done ...")
+# 	println("Point cloud: done ...")
 # end
 
 # function segment_las(file_las::String, outputfile::String, box::Common.LAR)
@@ -174,21 +177,21 @@ function main()
 	max_it = args["it"]
 	size_voxel = args["size"]
 
-	Registration.flushprintln("")
-	Registration.flushprintln("== PARAMETERS ==")
-	Registration.flushprintln("Target  =>  $target")
-	Registration.flushprintln("Source  =>  $source")
-	Registration.flushprintln("Picked points in Target  =>  $picked_target_")
-	Registration.flushprintln("Picked points in Source  =>  $picked_source_")
-	Registration.flushprintln("Output folder  =>  $output_folder")
-	Registration.flushprintln("Project name  =>  $proj_name")
-	Registration.flushprintln("Threshold  =>  $threshold")
-	Registration.flushprintln("Scale  =>  $scale")
-	Registration.flushprintln("Max iteration  =>  $max_it")
-	Registration.flushprintln("Size voxel  =>  $size_voxel")
+	println("")
+	println("== PARAMETERS ==")
+	println("Target  =>  $target")
+	println("Source  =>  $source")
+	println("Picked points in Target  =>  $picked_target_")
+	println("Picked points in Source  =>  $picked_source_")
+	println("Output folder  =>  $output_folder")
+	println("Project name  =>  $proj_name")
+	println("Threshold  =>  $threshold")
+	println("Scale  =>  $scale")
+	println("Max iteration  =>  $max_it")
+	println("Size voxel  =>  $size_voxel")
 
-	Registration.flushprintln("")
-	Registration.flushprintln("== SEGMENT ==")
+	println("")
+	println("== SEGMENT ==")
 
 	file_target = joinpath(output_folder,"target_segment.las")
 	file_source = joinpath(output_folder,"source_segment.las")
@@ -221,8 +224,8 @@ function main()
 	fetch(task1)
 	fetch(task2)
 
-	Registration.flushprintln("")
-	Registration.flushprintln("== PROCESSING ==")
+	println("")
+	println("== PROCESSING ==")
 
 
 	ROTO, fitness, rmse, corr_set = Registration.ICP(PC_target.coordinates,PC_source.coordinates,picked_target,picked_source; threshold = threshold, max_it = max_it)

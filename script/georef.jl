@@ -43,9 +43,9 @@ Save point cloud extracted file .las.
 function savepointcloud(potree::String, outputfile::String, ROTO::Matrix)
 
     # creo l'header
-    Registration.flushprintln("Point cloud: saving ...")
+    println("Point cloud: saving ...")
 
-    Registration.flushprintln("= Compute new AABB...")
+    println("= Compute new AABB...")
 
     cloudmetadata = FileManager.CloudMetadata(potree)
     tight_aabb = cloudmetadata.tightBoundingBox
@@ -68,7 +68,7 @@ function savepointcloud(potree::String, outputfile::String, ROTO::Matrix)
     write(t, Registration.LasIO.magic(Registration.LasIO.format"LAS"))
     write(t, mainHeader)
 
-    Registration.flushprintln("= Save transformed points...")
+    println("= Save transformed points...")
 
     for file in files
         h, laspoints = FileManager.read_LAS_LAZ(file) # read file
@@ -81,12 +81,12 @@ function savepointcloud(potree::String, outputfile::String, ROTO::Matrix)
                 affineMatrix = ROTO,
             )
             write(t, plas)
-            flush(t)
         end
     end
+    flush(t)
     close(t)
 
-    Registration.flushprintln("Point cloud: done")
+    println("Point cloud: done")
 end
 
 
@@ -100,24 +100,24 @@ function main()
     proj_name = args["projname"]
 
 
-    Registration.flushprintln("")
-    Registration.flushprintln("== PARAMETERS ==")
-    Registration.flushprintln("Potree  =>  $potree")
+    println("")
+    println("== PARAMETERS ==")
+    println("Potree  =>  $potree")
 
     picked = FileManager.load_points(picked_)
-    Registration.flushprintln("Picked points on Potree  =>  $picked")
+    println("Picked points on Potree  =>  $picked")
 
     ref_points = FileManager.load_points(ref_points_)
-    Registration.flushprintln("Reference points  =>  $ref_points")
+    println("Reference points  =>  $ref_points")
 
 
-    Registration.flushprintln("Output folder  =>  $output_folder")
-    Registration.flushprintln("Project name  =>  $proj_name")
+    println("Output folder  =>  $output_folder")
+    println("Project name  =>  $proj_name")
 
 
 
-    Registration.flushprintln("")
-    Registration.flushprintln("== PROCESSING ==")
+    println("")
+    println("== PROCESSING ==")
 
 
     ROTO, fitness, rmse, corr_set =
