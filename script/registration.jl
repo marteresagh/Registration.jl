@@ -1,4 +1,4 @@
-# TODO SOLO PER POTREE
+# SOLO PER POTREE
 
 println("loading packages... ")
 
@@ -8,7 +8,6 @@ using Search
 using Clipping
 
 println("packages OK")
-
 
 function parse_commandline()
 	s = ArgParseSettings()
@@ -47,13 +46,9 @@ function parse_commandline()
 		arg_type = Float64
 		default = 1.3
 	"--it"
-		help = "Scale factor of BB"
+		help = "Max iteration"
 		arg_type = Int64
 		default = 1000
-	"--size"
-		help = "size voxel"
-		arg_type = Float64
-		default = 0.001
 	end
 
 	return parse_args(s)
@@ -69,26 +64,23 @@ function savepointcloud(
 	files_target::Vector{String},
 	aabb::Common.AABB,
 	outputfile::String,
-	ROTO::Matrix,
-	size_voxel
+	ROTO::Matrix
 	)
 
 	# creo l'header
-	println("Point cloud: decimation ...")
+	println("Point cloud: merging ...")
 	PC_source = FileManager.las2pointcloud(files_source...)
 	PC_target = FileManager.las2pointcloud(files_target...)
 	PC_registered = Common.PointCloud(hcat(PC_target.coordinates,Common.apply_matrix(ROTO,PC_source.coordinates)),hcat(PC_target.rgbs,PC_source.rgbs))
-	PC_decimated = Registration.down_sample(PC_registered,size_voxel)
-	println("num points: $(PC_registered.n_points) -> $(PC_decimated.n_points)")
 	println("Point cloud: saving ...")
-	mainHeader = FileManager.newHeader(aabb,"REGISTRATION",FileManager.SIZE_DATARECORD,PC_decimated.n_points)
+	mainHeader = FileManager.newHeader(aabb,"REGISTRATION",FileManager.SIZE_DATARECORD,PC_registered.n_points)
 
 	open(outputfile,"w") do t
 		write(t, FileManager.LasIO.magic(FileManager.LasIO.format"LAS"))
 		write(t, mainHeader)
 
-		for i in 1:PC_decimated.n_points
-			p = FileManager.newPointRecord(PC_decimated.coordinates[:,i], convert.(FileManager.LasIO.N0f16,PC_decimated.rgbs[:,i]) , FileManager.LasIO.LasPoint2, mainHeader)
+		for i in 1:PC_registered.n_points
+			p = FileManager.newPointRecord(PC_registered.coordinates[:,i], convert.(FileManager.LasIO.N0f16,PC_registered.rgbs[:,i]) , FileManager.LasIO.LasPoint2, mainHeader)
 			write(t,p)
 			if i%10000 == 0
 				flush(t)
@@ -175,7 +167,6 @@ function main()
 	threshold = args["threshold"]
 	scale = args["scale"]
 	max_it = args["it"]
-	size_voxel = args["size"]
 
 	println("")
 	println("== PARAMETERS ==")
@@ -188,7 +179,6 @@ function main()
 	println("Threshold  =>  $threshold")
 	println("Scale  =>  $scale")
 	println("Max iteration  =>  $max_it")
-	println("Size voxel  =>  $size_voxel")
 
 	println("")
 	println("== SEGMENT ==")
@@ -261,7 +251,7 @@ function main()
 							 max(aabb_target.z_max,aabb_source.z_max),min(aabb_target.z_min,aabb_source.z_min))
 
 
-	savepointcloud(files_source, files_target, aabb, joinpath(output_folder,proj_name*".las"), ROTO, size_voxel)
+	savepointcloud(files_source, files_target, aabb, joinpath(output_folder,proj_name*".las"), ROTO)
 	# n_points = n_target+n_source
 	# savepointcloud(files_source, files_target, aabb, joinpath(output_folder,proj_name*".las"), n_points, ROTO)
 
