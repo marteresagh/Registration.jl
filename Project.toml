@@ -1,7 +1,7 @@
 name = "Registration"
 uuid = "b6a99c1e-16c5-47d1-8240-535d9d5902aa"
 authors = ["marteresagh <marteresa28@gmail.com>"]
-version = "0.1.0"
+version = "2.0.0"
 
 [deps]
 Common = "1e120bc2-2bd2-483a-9663-793997b3971f"
